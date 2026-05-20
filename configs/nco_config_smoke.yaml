@@ -1,0 +1,53 @@
+# =============================================================================
+# Smoke-test configuration: ~10 minutes on a single GPU.
+#
+# Use this BEFORE committing to a full training run, to verify the
+# environment is healthy and the pipeline executes end to end.
+# =============================================================================
+
+seed: 1234
+
+data:
+  num_customers: 10            # Small problem for fast iteration
+  capacity: 20
+  demand_low: 1
+  demand_high: 5
+  asymmetry_factor_max: 1.4
+
+model:
+  embed_dim: 64                # Smaller model
+  n_heads: 4
+  n_layers: 2
+  ffn_dim: 128
+  tanh_clip: 10.0
+
+emissions:
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 30
+
+training:
+  batch_size: 32
+  n_starts: 4
+  epochs: 3                    # Just enough to confirm loss decreases
+  steps_per_epoch: 50
+  val_size: 64
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 2.0
+  checkpoint_dir: models
+  device: cuda
+  save_prefix: acvrp_policy_smoke
+
+evaluation:
+  results_dir: results/nco_smoke
+  num_vehicles: 3
+  instances_per_city: 2
+  ortools_time_s: 5
+  pyvrp_time_s: 5
+  pomo_samples: 16
+  cities:
+    - {name: "banqiao", centre_lat: 25.0143, centre_lon: 121.4672, radius_m: 2000}

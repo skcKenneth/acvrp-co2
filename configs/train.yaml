@@ -1,0 +1,73 @@
+# =============================================================================
+# NCO training configuration
+# =============================================================================
+#
+# This file controls the neural training run. Hyperparameters are
+# deliberately moderate so that a single training run finishes in a few
+# hours on a consumer NVIDIA GPU (e.g. RTX 3060 / 4060). Tune `epochs`
+# and `steps_per_epoch` to your time budget.
+
+seed: 42
+
+# Emissions model parameters (must match config.yaml so the reward
+# signal is consistent with classical solvers).
+emissions:
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 30
+
+# Distribution from which on-the-fly synthetic ACVRP instances are
+# drawn during training. The asymmetry factor controls how much the
+# random "one-way" perturbation distorts the symmetric base.
+synthetic:
+  num_customers: 20
+  capacity: 30
+  demand_low: 1
+  demand_high: 9
+  asymmetry_factor_max: 1.4
+  depot_at_centre: true
+
+# Model architecture. embed_dim 128 / 3 layers / 8 heads gives ~150K
+# parameters; comfortable to train on a single mid-range GPU.
+model:
+  node_feature_dim: 3        # (x_norm, y_norm, demand_norm)
+  edge_feature_dim: 4        # (distance, time, fuel, CO2) all normalised
+  embed_dim: 128
+  n_heads: 8
+  n_layers: 3
+  ffn_dim: 256
+  tanh_clip: 10.0
+  cost_mode: distance        # "distance" | "co2" | "blend"
+  co2_weight: 0.5
+  co2_scale: 1000.0          # multiplies kg CO2 in blended cost
+
+# Training schedule. With these numbers, a full run is ~25,000 batches
+# = 1.6M instances seen, which is enough to get a reasonable policy for
+# N=20 ACVRP. Increase steps_per_epoch for larger problems.
+training:
+  batch_size: 64
+  n_starts: 8                # POMO multi-start baseline width
+  epochs: 50
+  steps_per_epoch: 500
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 2.0
+  eval_every: 1
+  checkpoint_dir: models
+  device: cuda
+
+# Optional held-out OSM evaluation set used during training. Pass
+# `--osm-eval` on the command line to enable this. Defaults to a small
+# urban region; change to your city of interest.
+osm_eval:
+  centre_lat: 25.0143
+  centre_lon: 121.4672
+  radius_m: 2000
+  network_type: drive
+  num_customers: 20
+  capacity: 30
+  num_instances: 16
+  city_name: banqiao

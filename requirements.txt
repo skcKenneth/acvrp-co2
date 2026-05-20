@@ -1,0 +1,31 @@
+# Core scientific stack
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+
+# Classical optimization
+ortools>=9.8
+pyvrp>=0.10            # HGS-CVRP, state-of-the-art classical solver
+deap>=1.4              # Genetic algorithm baseline
+
+# Geospatial / road networks
+osmnx>=1.9
+networkx>=3.2
+geopy>=2.4
+
+# Deep learning (NCO)
+torch>=2.2             # PyTorch with CUDA for the NCO models
+tensordict>=0.4        # Used by rl4co and by our own batched-state code
+einops>=0.7            # Concise tensor reshaping in attention layers
+
+# Visualization
+matplotlib>=3.8
+folium>=0.15
+seaborn>=0.13
+
+# Config + utilities
+pyyaml>=6.0
+tqdm>=4.66
+
+# Testing
+pytest>=7.4

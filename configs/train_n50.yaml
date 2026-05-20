@@ -1,0 +1,63 @@
+# =============================================================================
+# NCO training configuration -- N=50 (recommended for RTX 5070 Ti)
+# =============================================================================
+#
+# Standard research-paper instance size. Memory and time budget on an
+# RTX 5070 Ti is around 6-8 GB VRAM and ~3-5 hours per policy.
+
+seed: 42
+
+emissions:
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 30
+
+# Bigger problem instances for more credible NCO results.
+synthetic:
+  num_customers: 50            # ↑ was 20
+  capacity: 50                 # ↑ was 30, scaled with demand
+  demand_low: 1
+  demand_high: 9
+  asymmetry_factor_max: 1.4
+  depot_at_centre: true
+
+# Larger model -- N=50 benefits from a slightly deeper / wider net.
+model:
+  node_feature_dim: 3
+  edge_feature_dim: 4
+  embed_dim: 192               # ↑ was 128
+  n_heads: 8
+  n_layers: 4                  # ↑ was 3
+  ffn_dim: 384                 # ↑ was 256
+  tanh_clip: 10.0
+  cost_mode: distance          # change to "blend" for Pareto runs
+  co2_weight: 0.5
+  co2_scale: 1000.0
+
+# Training schedule. With these numbers a full run is ~50,000 batches
+# on a 5070 Ti, about 3-5 hours. Reduce steps_per_epoch if you want a
+# quicker but lower-quality model.
+training:
+  batch_size: 64
+  n_starts: 8
+  epochs: 100                  # ↑ was 50, problem is harder
+  steps_per_epoch: 500
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 2.0
+  eval_every: 1
+  checkpoint_dir: models
+  device: cuda
+
+osm_eval:
+  centre_lat: 25.0143
+  centre_lon: 121.4672
+  radius_m: 3000               # ↑ was 2000; bigger region for N=50
+  network_type: drive
+  num_customers: 50
+  capacity: 50
+  num_instances: 16
+  city_name: banqiao_n50

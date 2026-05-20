@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "acvrp-co2"
+version = "0.1.0"
+description = "Carbon-aware asymmetric capacitated vehicle routing."
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+# Run pytest from the project root with `python -m pytest`. The
+# rootdir is auto-detected from this file, and `tests/` is added to
+# the collection set.
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+filterwarnings = [
+    # Silence pkg_resources deprecation noise from third-party libs.
+    "ignore::DeprecationWarning:pkg_resources",
+]

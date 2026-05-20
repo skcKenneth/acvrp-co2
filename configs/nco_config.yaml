@@ -1,0 +1,68 @@
+# =============================================================================
+# Asymmetric NCO experiment configuration
+# =============================================================================
+#
+# Estimated wall-clock on an RTX 3090 / 4090:
+#   * default settings below: ~6 hours of training to convergence
+#   * quick-sanity smoke test: reduce epochs to 2 and steps_per_epoch to 50;
+#     completes in under 10 minutes and verifies the pipeline is healthy
+#     before committing to the long run.
+# =============================================================================
+
+seed: 1234
+
+# --- Problem distribution (used to sample training and validation) ---
+data:
+  num_customers: 20            # N = 20 customers + 1 depot
+  capacity: 30
+  demand_low: 1
+  demand_high: 9
+  asymmetry_factor_max: 1.4    # 1.0 = pure Euclidean, 1.4 = 40% one-way asymmetry
+
+# --- Model hyperparameters (same as POMO defaults) ---
+model:
+  embed_dim: 128
+  n_heads: 8
+  n_layers: 3
+  ffn_dim: 256
+  tanh_clip: 10.0
+
+# --- Linear fuel/CO2 model (same parameters as the classical pipeline) ---
+emissions:
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 30
+
+# --- Training schedule ---
+training:
+  batch_size: 64
+  n_starts: 8                  # POMO multi-start rollouts per instance
+  epochs: 50
+  steps_per_epoch: 500
+  val_size: 256
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  grad_clip: 2.0
+  checkpoint_dir: models
+  device: cuda
+  save_prefix: acvrp_policy
+
+# --- OSM held-out evaluation cities ---
+evaluation:
+  results_dir: results/nco
+  num_vehicles: 3
+  instances_per_city: 10
+  ortools_time_s: 30
+  pyvrp_time_s: 30
+  pomo_samples: 64
+  cities:
+    # Pick cities the model has NEVER seen during training to test
+    # cross-topology generalisation.
+    - {name: "banqiao",  centre_lat: 25.0143, centre_lon: 121.4672, radius_m: 2000}
+    - {name: "hsinchu",  centre_lat: 24.8138, centre_lon: 120.9675, radius_m: 2000}
+    - {name: "kaohsiung",centre_lat: 22.6273, centre_lon: 120.3014, radius_m: 2000}
+    - {name: "tainan",   centre_lat: 22.9999, centre_lon: 120.2270, radius_m: 2000}
+    - {name: "taichung", centre_lat: 24.1477, centre_lon: 120.6736, radius_m: 2000}
