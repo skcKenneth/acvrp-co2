@@ -59,10 +59,9 @@ evaluation:
   pyvrp_time_s: 30
   pomo_samples: 64
   cities:
-    # Pick cities the model has NEVER seen during training to test
-    # cross-topology generalisation.
-    - {name: "banqiao",  centre_lat: 25.0143, centre_lon: 121.4672, radius_m: 2000}
-    - {name: "hsinchu",  centre_lat: 24.8138, centre_lon: 120.9675, radius_m: 2000}
-    - {name: "kaohsiung",centre_lat: 22.6273, centre_lon: 120.3014, radius_m: 2000}
-    - {name: "tainan",   centre_lat: 22.9999, centre_lon: 120.2270, radius_m: 2000}
-    - {name: "taichung", centre_lat: 24.1477, centre_lon: 120.6736, radius_m: 2000}
+    # Cities the NCO model has NEVER seen during training (training uses
+    # synthetic asymmetric instances). The two cities span very different
+    # urban topologies, giving us a meaningful test of cross-topology
+    # generalisation.
+    - {name: "macau",     centre_lat: 22.1980, centre_lon: 113.5430, radius_m: 2000}
+    - {name: "hongkong",  centre_lat: 22.2854, centre_lon: 114.1577, radius_m: 2000}

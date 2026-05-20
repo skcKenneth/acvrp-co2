@@ -79,9 +79,14 @@ def compute_penalties(
     for code, ev in evaluations.items():
         if code == baseline:
             continue
+        def _pct(delta: float, base: float) -> float | None:
+            if not np.isfinite(base) or base == 0.0 or not np.isfinite(delta):
+                return None
+            return 100.0 * delta / base
+
         penalties[code] = {
-            "distance_pct": 100.0 * (ev.distance_m - ref.distance_m) / ref.distance_m,
-            "co2_pct":      100.0 * (ev.co2_kg - ref.co2_kg) / ref.co2_kg,
-            "fuel_pct":     100.0 * (ev.fuel_l - ref.fuel_l) / ref.fuel_l,
+            "distance_pct": _pct(ev.distance_m - ref.distance_m, ref.distance_m),
+            "co2_pct": _pct(ev.co2_kg - ref.co2_kg, ref.co2_kg),
+            "fuel_pct": _pct(ev.fuel_l - ref.fuel_l, ref.fuel_l),
         }
     return penalties

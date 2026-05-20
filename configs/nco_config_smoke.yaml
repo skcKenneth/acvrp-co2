@@ -50,4 +50,4 @@ evaluation:
   pyvrp_time_s: 5
   pomo_samples: 16
   cities:
-    - {name: "banqiao", centre_lat: 25.0143, centre_lon: 121.4672, radius_m: 2000}
+    - {name: "macau", centre_lat: 22.1980, centre_lon: 113.5430, radius_m: 2000}

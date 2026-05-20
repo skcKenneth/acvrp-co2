@@ -49,10 +49,11 @@ A custom asymmetric-aware policy network with:
 
 **Cross-city generalisation study (Stage 3).**
 The policy is trained on *synthetic* asymmetric instances and
-evaluated on held-out OSM-derived instances from five Taiwanese
-cities (Banqiao, Hsinchu, Kaohsiung, Tainan, Taichung). The per-city
-optimality gap quantifies how well the model generalises across
-unseen road topologies.
+evaluated on held-out OSM-derived instances from two dense, highly
+asymmetric urban centres — **Macau Peninsula** and **Hong Kong
+Island Central / Sheung Wan / Wan Chai**. The per-city optimality
+gap quantifies how well the model generalises across unseen road
+topologies.
 
 ---
 
@@ -83,8 +84,10 @@ src/
 configs/
 └── nco_config.yaml            Hyperparameters for the neural pipeline
 
-config.yaml                    Hyperparameters for the classical pipeline
-data/customers_sample.csv      Sample customer locations (Banqiao)
+config.yaml                    Hyperparameters for the classical pipeline (Macau)
+config_hongkong.yaml           Alternative city: Hong Kong Central
+data/customers_macau.csv       Customer locations -- Macau Peninsula
+data/customers_hongkong.csv    Customer locations -- HK Central / Sheung Wan / Wan Chai
 docs/methodology.md            Classical formulation, equations, citations
 docs/nco_methodology.md        Neural formulation, equations, citations
 tests/                         Unit tests (pytest)

@@ -1,0 +1,60 @@
+# =============================================================================
+# ACVRP-CO2 experiment configuration -- Hong Kong Island Central
+# =============================================================================
+#
+# Hong Kong Island's Central-Sheung Wan-Wan Chai corridor is one of the
+# world's most asymmetric urban road networks. The combination of:
+#   - steep slopes that force directional traffic flow
+#   - extensive one-way regulations in the colonial-era street grid
+#   - SoHo's narrow ladder streets (some literally walk-only, others
+#     directional)
+# makes this an extreme test case for the asymmetry-penalty hypothesis.
+#
+# We expect a noticeably higher AR asymmetry index than Macau, which
+# itself should be higher than a planned suburban grid.
+
+region:
+  # Centred near Hong Kong Station / IFC. A 2 km radius reaches from
+  # Sheung Wan in the west to Wan Chai in the east, and from Mid-Levels
+  # in the south to the harbourfront in the north.
+  centre_lat: 22.2854
+  centre_lon: 114.1577
+  radius_m: 2000
+  network_type: drive
+
+data:
+  customers_csv: data/customers_hongkong.csv
+  depot_index: 0
+
+fleet:
+  num_vehicles: 4
+  vehicle_capacity: 60       # Total fleet capacity 240, demand sum ~122 (51%)
+
+emissions:
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 20          # HK Central is among the slowest urban cores
+
+objective:
+  alpha_distance: 0.5
+  alpha_emissions: 0.5
+
+ortools:
+  time_limit_seconds: 90
+  first_solution_strategy: PATH_CHEAPEST_ARC
+  local_search_metaheuristic: GUIDED_LOCAL_SEARCH
+
+genetic_algorithm:
+  population_size: 120
+  generations: 300
+  crossover_prob: 0.85
+  mutation_prob: 0.15
+  tournament_size: 4
+  random_seed: 42
+
+output:
+  results_dir: results_hongkong
+  variants: [SE, SM, SR, AR]

@@ -63,11 +63,12 @@ training:
 # `--osm-eval` on the command line to enable this. Defaults to a small
 # urban region; change to your city of interest.
 osm_eval:
-  centre_lat: 25.0143
-  centre_lon: 121.4672
+  # Macau Peninsula -- matches the primary case-study city.
+  centre_lat: 22.1980
+  centre_lon: 113.5430
   radius_m: 2000
   network_type: drive
   num_customers: 20
   capacity: 30
   num_instances: 16
-  city_name: banqiao
+  city_name: macau

@@ -1,49 +1,47 @@
 # =============================================================================
-# ACVRP-CO2 experiment configuration
+# ACVRP-CO2 experiment configuration -- Macau Peninsula (default)
 # =============================================================================
+#
+# Macau Peninsula combines a dense Portuguese-colonial street grid with
+# extensive one-way regulation and steep gradients. We expect a higher
+# AR asymmetry index here than in suburban or planned grid networks,
+# making it a strong primary case study for measuring the
+# asymmetry penalty in last-mile delivery routing.
 
-# --- Geographic region for the OSM road network ---
 region:
-  # Centre point of the delivery area (lat, lon). Banqiao district, New Taipei.
-  centre_lat: 25.0143
-  centre_lon: 121.4672
-  # Radius (m) for the bounding-box graph download
+  # Centred on Tap Seac Square. A 2 km radius covers from the Border
+  # Gate (north) down to Macau Tower (south), Inner Harbour (west) to
+  # the Outer Harbour / NAPE area (east).
+  centre_lat: 22.1980
+  centre_lon: 113.5430
   radius_m: 2000
-  # Network filter; 'drive' returns car-drivable streets including one-ways
   network_type: drive
 
-# --- Customer / depot data ---
 data:
-  customers_csv: data/customers_sample.csv
-  depot_index: 0           # First row in the CSV is treated as the depot
+  customers_csv: data/customers_macau.csv
+  depot_index: 0
 
-# --- Fleet parameters ---
 fleet:
-  num_vehicles: 3
-  vehicle_capacity: 50     # Total demand units a vehicle can carry
+  num_vehicles: 4
+  vehicle_capacity: 60       # Total fleet capacity 240, demand sum ~122 (51%)
 
-# --- Linear fuel-consumption model (Bektaş-Laporte style) ---
-# Y = C1*d + C2*t + C3*M ; units chosen so output is litres of diesel
 emissions:
-  C1_distance: 0.000125    # L per metre (empty vehicle baseline)
-  C2_time:     0.00040     # L per second (idling/auxiliary)
-  C3_mass:     0.0000018   # L per (metre * kg of payload)
-  empty_mass_kg: 2200      # Curb weight of a typical light-duty delivery van
-  co2_per_litre: 2.68      # kg CO2 emitted per litre of diesel burned
-  avg_speed_kmh: 30        # Used to convert distance to travel time
+  C1_distance: 0.000125
+  C2_time:     0.00040
+  C3_mass:     0.0000018
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  avg_speed_kmh: 22          # Macau peninsula traffic is dense and slow
 
-# --- Multi-objective scalarisation weights (alpha1*dist + alpha2*CO2) ---
 objective:
   alpha_distance: 0.5
   alpha_emissions: 0.5
 
-# --- OR-Tools solver settings ---
 ortools:
-  time_limit_seconds: 60
+  time_limit_seconds: 90
   first_solution_strategy: PATH_CHEAPEST_ARC
   local_search_metaheuristic: GUIDED_LOCAL_SEARCH
 
-# --- Genetic algorithm settings ---
 genetic_algorithm:
   population_size: 120
   generations: 300
@@ -52,7 +50,6 @@ genetic_algorithm:
   tournament_size: 4
   random_seed: 42
 
-# --- Output ---
 output:
-  results_dir: results
+  results_dir: results_macau
   variants: [SE, SM, SR, AR]

@@ -2,12 +2,8 @@
 REM ============================================================================
 REM  check_status.bat
 REM  ----------------------------------------------------------------------------
-REM  Quick "did my overnight run succeed?" checker.
-REM
-REM  Looks at the most recent overnight_*.log and prints a summary of which
-REM  steps finished, plus any [FATAL] / [WARNING] markers.
-REM
-REM  Usage:  check_status.bat
+REM  Quick "did my overnight run succeed?" checker for the Macau + Hong Kong
+REM  pipeline.
 REM ============================================================================
 
 setlocal enabledelayedexpansion
@@ -42,9 +38,15 @@ if exist models\matnet_cvrp_best.pt (echo   [OK] models\matnet_cvrp_best.pt) els
 if exist models\baseline_am_best.pt  (echo   [OK] models\baseline_am_best.pt) else (echo   [missing] models\baseline_am_best.pt)
 
 echo.
-echo === Results files present ===
-if exist results\summary.csv         (echo   [OK] results\summary.csv          ^(Stage 1^)) else (echo   [missing] results\summary.csv)
-if exist results\routes_map.html     (echo   [OK] results\routes_map.html      ^(Stage 1 map^)) else (echo   [missing] results\routes_map.html)
-if exist results\summary_full.csv    (echo   [OK] results\summary_full.csv     ^(Stage 4 grid^)) else (echo   [missing] results\summary_full.csv)
+echo === Macau results ===
+if exist results_macau\summary.csv         (echo   [OK] results_macau\summary.csv          ^(Stage 1^)) else (echo   [missing] results_macau\summary.csv)
+if exist results_macau\routes_map.html     (echo   [OK] results_macau\routes_map.html      ^(Stage 1 map^)) else (echo   [missing] results_macau\routes_map.html)
+if exist results_macau\summary_full.csv    (echo   [OK] results_macau\summary_full.csv     ^(Stage 5 grid^)) else (echo   [missing] results_macau\summary_full.csv)
+
+echo.
+echo === Hong Kong results ===
+if exist results_hongkong\summary.csv      (echo   [OK] results_hongkong\summary.csv       ^(Stage 1b^)) else (echo   [missing] results_hongkong\summary.csv)
+if exist results_hongkong\routes_map.html  (echo   [OK] results_hongkong\routes_map.html   ^(Stage 1b map^)) else (echo   [missing] results_hongkong\routes_map.html)
+if exist results_hongkong\summary_full.csv (echo   [OK] results_hongkong\summary_full.csv  ^(Stage 5b grid^)) else (echo   [missing] results_hongkong\summary_full.csv)
 
 endlocal

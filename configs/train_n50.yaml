@@ -53,11 +53,12 @@ training:
   device: cuda
 
 osm_eval:
-  centre_lat: 25.0143
-  centre_lon: 121.4672
-  radius_m: 3000               # ↑ was 2000; bigger region for N=50
+  # Macau Peninsula -- matches the primary case-study city.
+  centre_lat: 22.1980
+  centre_lon: 113.5430
+  radius_m: 2500
   network_type: drive
   num_customers: 50
   capacity: 50
   num_instances: 16
-  city_name: banqiao_n50
+  city_name: macau_n50

@@ -1,0 +1,45 @@
+ 
+============================================================ 
+ACVRP-CO2 overnight pipeline (Macau + Hong Kong) 
+Started: 2026/05/20 ¶g¤T 21:04:18.80 
+Working dir: D:\GitHub Project\acvrp-co2 
+Log file:    logs\overnight_20260520_210418.log 
+============================================================ 
+ 
+[21:04:18.81] Step 0: Environment sanity check... 
+All imports OK
+Torch: 2.9.1+cu130
+CUDA available: True
+GPU: NVIDIA GeForce RTX 5070
+ 
+[21:04:21.46] Step 1: Classical experiment (Macau)... 
+Warning: Mong_Ha_Dist snapped to unreachable node 7264016227; using 9026600176 instead.
+Graph: 1853 nodes, 3229 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.0783
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 27.73     116.145     311.270
+SM                 26.82     112.490     301.473
+SR                 27.77     116.766     312.932
+AR                 24.20     101.674     272.486
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +14.55%, CO2 +14.23%
+  SM: distance +10.81%, CO2 +10.64%
+  SR: distance +14.71%, CO2 +14.84%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_macau

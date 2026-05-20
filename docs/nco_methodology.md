@@ -153,8 +153,9 @@ end (slow but near-optimal) of the classical spectrum.
 
 The model is trained on synthetic asymmetric instances and never sees
 real road networks during training. At evaluation time we sample
-held-out instances from five distinct Taiwanese urban areas — Banqiao,
-Hsinchu, Kaohsiung, Tainan, Taichung — and report per-city mean cost
+held-out instances from two highly asymmetric urban centres in the
+Pearl River Delta — **Macau Peninsula** and **Hong Kong Island
+Central / Sheung Wan / Wan Chai** — and report per-city mean cost
 plus the optimality gap
 
 $$
