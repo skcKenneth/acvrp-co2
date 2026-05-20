@@ -1,27 +1,12 @@
 @echo off
 REM ============================================================================
-REM  run_overnight.bat
+REM  run_overnight.bat  (v2 -- no wmic dependency, works on Windows 11 25H2+)
 REM  ----------------------------------------------------------------------------
 REM  Unattended end-to-end pipeline for the ACVRP-CO2 project.
-REM
-REM  What it does, in order:
-REM    1. Verifies PyTorch + CUDA before starting anything heavy
-REM    2. Runs the classical Stage 1 (OR-Tools + GA, CPU, ~10 min)
-REM    3. Runs the NCO smoke test (~5 min) to catch GPU issues early
-REM    4. Trains MatNet-CVRP (N=50, ~3-5 h)
-REM    5. Trains Vanilla-AM baseline (N=50, ~2-3 h)
-REM    6. Runs the full 4-solver x 4-matrix grid comparison
-REM    7. Writes a single overnight.log with everything timestamped
-REM
-REM  Crucially, every step uses && so a failure stops the pipeline AT THAT
-REM  STEP and writes a clear error marker into the log instead of silently
-REM  continuing with corrupt state.
 REM
 REM  Usage:
 REM    run_overnight.bat              (no shutdown after)
 REM    run_overnight.bat /shutdown    (auto-shutdown after success only)
-REM
-REM  Logs are written to logs\overnight_YYYYMMDD_HHMMSS.log
 REM ============================================================================
 
 setlocal enabledelayedexpansion
@@ -29,19 +14,26 @@ setlocal enabledelayedexpansion
 REM --- Resolve project root from the script's own location ---
 cd /d "%~dp0"
 
-REM --- Set up the log file with a timestamp ---
-for /f "tokens=2 delims==" %%i in ('wmic os get localdatetime /value') do set DT=%%i
-set STAMP=%DT:~0,8%_%DT:~8,6%
+REM --- Time-stamp the log file. We use PowerShell because wmic was
+REM --- removed from Windows 11 25H2.
+for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"`) do set STAMP=%%t
+
+if "!STAMP!"=="" set STAMP=run
+
 if not exist logs mkdir logs
-set LOG=logs\overnight_%STAMP%.log
+set LOG=logs\overnight_!STAMP!.log
 
 echo. > "%LOG%"
 echo ============================================================ >> "%LOG%"
 echo ACVRP-CO2 overnight pipeline >> "%LOG%"
 echo Started: %date% %time% >> "%LOG%"
 echo Working dir: %cd% >> "%LOG%"
+echo Log file:    %LOG% >> "%LOG%"
 echo ============================================================ >> "%LOG%"
 echo. >> "%LOG%"
+
+echo Logging to %LOG%
+echo.
 
 REM ----------------------------------------------------------------------------
 REM Step 0: sanity checks. Bail out before training if anything is wrong.
@@ -60,6 +52,7 @@ REM Step 1: classical Stage 1 (no GPU needed). Quick failure surface for OSMnx.
 REM ----------------------------------------------------------------------------
 echo. >> "%LOG%"
 echo [%time%] Step 1: Classical experiment (OR-Tools + GA)... >> "%LOG%"
+echo [%time%] Step 1: Classical experiment...
 python -m src.experiments --config config.yaml >> "%LOG%" 2>&1
 if errorlevel 1 (
     echo [FATAL] Step 1 failed. Pipeline aborted. >> "%LOG%"
@@ -69,10 +62,30 @@ if errorlevel 1 (
 echo [%time%] Step 1 OK. >> "%LOG%"
 
 REM ----------------------------------------------------------------------------
+REM Step 1b: Run Stage 1 on a second city (Taipei downtown). Helps the paper
+REM have more than one empirical data point. If the Taipei config / data is
+REM missing the step is skipped cleanly.
+REM ----------------------------------------------------------------------------
+if exist config_taipei.yaml if exist data\customers_taipei.csv (
+    echo. >> "%LOG%"
+    echo [%time%] Step 1b: Classical experiment for Taipei downtown... >> "%LOG%"
+    echo [%time%] Step 1b: Taipei downtown experiment...
+    python -m src.experiments --config config_taipei.yaml >> "%LOG%" 2>&1
+    if errorlevel 1 (
+        echo [WARNING] Step 1b failed; continuing with main pipeline. >> "%LOG%"
+    ) else (
+        echo [%time%] Step 1b OK. >> "%LOG%"
+    )
+) else (
+    echo [%time%] Step 1b skipped: config_taipei.yaml or customer CSV missing. >> "%LOG%"
+)
+
+REM ----------------------------------------------------------------------------
 REM Step 2: NCO smoke training (~5 min). If this fails, full training would too.
 REM ----------------------------------------------------------------------------
 echo. >> "%LOG%"
 echo [%time%] Step 2: NCO smoke test... >> "%LOG%"
+echo [%time%] Step 2: NCO smoke test...
 python -m src.nco_experiments --mode train --config configs/nco_config_smoke.yaml >> "%LOG%" 2>&1
 if errorlevel 1 (
     echo [FATAL] Step 2 (smoke) failed. Aborting before main training. >> "%LOG%"
@@ -86,6 +99,7 @@ REM Step 3: Train MatNet-CVRP (the main model, N=50).
 REM ----------------------------------------------------------------------------
 echo. >> "%LOG%"
 echo [%time%] Step 3: Training MatNet-CVRP (N=50)... >> "%LOG%"
+echo [%time%] Step 3: Training MatNet-CVRP (3-5 h)...
 python -m src.train_nco --policy matnet --config configs/train_n50.yaml --osm-eval >> "%LOG%" 2>&1
 if errorlevel 1 (
     echo [WARNING] Step 3 failed. Continuing with baseline so you don't lose the night. >> "%LOG%"
@@ -100,6 +114,7 @@ REM Step 4: Train Vanilla-AM baseline (N=50).
 REM ----------------------------------------------------------------------------
 echo. >> "%LOG%"
 echo [%time%] Step 4: Training Vanilla-AM baseline (N=50)... >> "%LOG%"
+echo [%time%] Step 4: Training Vanilla-AM baseline (2-3 h)...
 python -m src.train_nco --policy baseline --config configs/train_n50.yaml --osm-eval >> "%LOG%" 2>&1
 if errorlevel 1 (
     echo [WARNING] Step 4 failed. Skipping baseline in Stage 4 evaluation. >> "%LOG%"
@@ -114,6 +129,7 @@ REM Step 5: 4-solver x 4-matrix comparison. Skip silently if no checkpoints.
 REM ----------------------------------------------------------------------------
 echo. >> "%LOG%"
 echo [%time%] Step 5: 4-solver grid comparison... >> "%LOG%"
+echo [%time%] Step 5: Final grid comparison...
 
 set GRID_CMD=python -m src.experiments_full --config config.yaml
 if "!MATNET_OK!"=="1" set GRID_CMD=!GRID_CMD! --matnet-checkpoint models\matnet_cvrp_best.pt
@@ -131,7 +147,7 @@ echo ============================================================ >> "%LOG%"
 echo Pipeline finished: %date% %time% >> "%LOG%"
 echo MATNET trained:  !MATNET_OK! >> "%LOG%"
 echo BASELINE trained: !BASELINE_OK! >> "%LOG%"
-echo Outputs in: results\ >> "%LOG%"
+echo Outputs in: results\, results_taipei\ >> "%LOG%"
 echo Log: %LOG% >> "%LOG%"
 echo ============================================================ >> "%LOG%"
 
