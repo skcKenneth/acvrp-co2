@@ -14,3 +14,342 @@ CUDA available: True
 GPU: NVIDIA GeForce RTX 5070
  
 [20:26:37.24] Step 1: Classical experiment (Macau)... 
+  Warning: Mong_Ha_Dist was on an unreachable road node; re-snapped to the nearest depot-reachable node.
+Graph: 1853 nodes, 3229 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.0783
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 27.73     116.145     311.270
+SM                 26.82     112.490     301.473
+SR                 27.77     116.766     312.932
+AR                 24.20     101.674     272.486
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +14.55%, CO2 +14.23%
+  SM: distance +10.81%, CO2 +10.64%
+  SR: distance +14.71%, CO2 +14.84%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_macau
+[20:32:39.13] Step 1 OK. 
+ 
+[20:32:39.13] Step 1b: Classical experiment Hong Kong... 
+Graph: 972 nodes, 1727 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.1232
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 26.75     112.544     301.619
+SM                 27.40     115.337     309.102
+SR                 20.09      84.416     226.234
+AR                 19.28      80.957     216.965
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +38.75%, CO2 +39.02%
+  SM: distance +42.13%, CO2 +42.47%
+  SR: distance +4.25%, CO2 +4.27%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_hongkong
+[20:32:39.13] Step 1b OK. 
+ 
+[20:38:41.07] Step 2: NCO smoke test... 
+epoch   1/3 | train cost  32929.1 | loss -1437.0586 | val cost  28899.7 | patience  0 |   2.6s
+epoch   2/3 | train cost  31227.1 | loss -1801.6203 | val cost  26802.0 | patience  0 |   2.2s
+epoch   3/3 | train cost  29556.4 | loss -1882.4070 | val cost  27121.8 | patience  1 |   2.3s
+[20:38:52.22] Step 2 OK. 
+ 
+[20:38:52.22] Step 3: Training MatNet-CVRP (N=20)... 
+Downloading OSM graph for evaluation set @(22.198, 113.543), r=2000 m...
+Built 16 OSM evaluation instances.
+Training matnet policy (577,504 params)
+epoch   1/50 | train cost  44207.5 | loss -11002.7375 | val cost  30822.9 | patience  0 |  64.4s
+epoch   2/50 | train cost  35248.1 | loss -9077.5246 | val cost  29762.0 | patience  0 |  64.3s
+epoch   3/50 | train cost  34066.8 | loss -5435.2875 | val cost  29652.2 | patience  0 |  63.3s
+epoch   4/50 | train cost  33542.6 | loss -4282.9415 | val cost  29148.8 | patience  0 |  62.2s
+epoch   5/50 | train cost  33333.2 | loss -3983.9963 | val cost  29681.4 | patience  1 |  63.1s
+epoch   6/50 | train cost  33155.4 | loss -3855.0024 | val cost  29577.8 | patience  2 |  62.9s
+epoch   7/50 | train cost  32831.5 | loss -3827.0091 | val cost  29482.1 | patience  3 |  59.5s
+epoch   8/50 | train cost  32599.7 | loss -3601.4919 | val cost  29035.9 | patience  0 |  51.0s
+epoch   9/50 | train cost  32381.6 | loss -3461.4420 | val cost  29377.1 | patience  1 |  52.3s
+epoch  10/50 | train cost  32285.3 | loss -3233.5099 | val cost  29155.0 | patience  2 |  61.4s
+epoch  11/50 | train cost  32171.4 | loss -3089.3679 | val cost  29233.1 | patience  3 |  61.4s
+epoch  12/50 | train cost  32096.3 | loss -3228.4545 | val cost  29356.0 | patience  4 |  61.1s
+epoch  13/50 | train cost  32040.1 | loss -3032.5941 | val cost  29035.2 | patience  0 |  60.8s
+epoch  14/50 | train cost  32005.4 | loss -3087.1733 | val cost  28982.7 | patience  0 |  61.8s
+epoch  15/50 | train cost  31989.2 | loss -3092.9657 | val cost  28782.4 | patience  0 |  60.7s
+epoch  16/50 | train cost  31910.6 | loss -3092.9829 | val cost  28969.5 | patience  1 |  60.9s
+epoch  17/50 | train cost  31894.9 | loss -3055.4497 | val cost  28621.9 | patience  0 |  60.9s
+epoch  18/50 | train cost  31838.9 | loss -3139.0386 | val cost  28877.5 | patience  1 |  60.8s
+epoch  19/50 | train cost  31815.6 | loss -3015.0853 | val cost  29126.5 | patience  2 |  60.4s
+epoch  20/50 | train cost  31765.8 | loss -3134.9801 | val cost  28866.1 | patience  3 |  60.6s
+epoch  21/50 | train cost  31730.8 | loss -2990.7980 | val cost  28775.0 | patience  4 |  60.7s
+epoch  22/50 | train cost  31712.7 | loss -3064.6096 | val cost  28938.3 | patience  5 |  60.7s
+epoch  23/50 | train cost  31677.6 | loss -3097.7505 | val cost  28788.6 | patience  6 |  60.7s
+epoch  24/50 | train cost  31668.3 | loss -3062.1262 | val cost  28566.0 | patience  0 |  60.7s
+epoch  25/50 | train cost  31679.5 | loss -3049.8310 | val cost  28900.6 | patience  1 |  60.6s
+epoch  26/50 | train cost  31618.8 | loss -3096.6388 | val cost  28699.3 | patience  2 |  60.4s
+epoch  27/50 | train cost  31617.7 | loss -3106.8505 | val cost  28748.0 | patience  3 |  60.6s
+epoch  28/50 | train cost  31591.0 | loss -3078.6597 | val cost  28988.5 | patience  4 |  60.5s
+epoch  29/50 | train cost  31580.7 | loss -3122.9120 | val cost  28498.5 | patience  0 |  60.5s
+epoch  30/50 | train cost  31568.0 | loss -3107.4072 | val cost  28444.1 | patience  0 |  60.6s
+epoch  31/50 | train cost  31555.4 | loss -3137.5451 | val cost  28721.4 | patience  1 |  60.5s
+epoch  32/50 | train cost  31549.8 | loss -3054.5195 | val cost  28826.5 | patience  2 |  60.5s
+epoch  33/50 | train cost  31505.6 | loss -3103.3661 | val cost  28781.5 | patience  3 |  60.4s
+epoch  34/50 | train cost  31484.2 | loss -3094.3045 | val cost  28767.6 | patience  4 |  60.4s
+epoch  35/50 | train cost  31484.7 | loss -3117.2526 | val cost  28675.2 | patience  5 |  60.5s
+epoch  36/50 | train cost  31488.7 | loss -3028.6308 | val cost  28479.7 | patience  6 |  60.5s
+epoch  37/50 | train cost  31442.4 | loss -3084.4809 | val cost  28594.1 | patience  7 |  60.5s
+epoch  38/50 | train cost  31457.0 | loss -3092.2031 | val cost  28550.0 | patience  8 |  60.3s
+epoch  39/50 | train cost  31476.9 | loss -3141.9994 | val cost  28966.7 | patience  9 |  60.5s
+epoch  40/50 | train cost  31453.3 | loss -3110.6846 | val cost  28422.5 | patience  0 |  60.3s
+epoch  41/50 | train cost  31436.3 | loss -3113.5441 | val cost  28786.2 | patience  1 |  60.3s
+epoch  42/50 | train cost  31420.3 | loss -3122.9303 | val cost  28686.3 | patience  2 |  60.3s
+epoch  43/50 | train cost  31427.6 | loss -3119.5417 | val cost  28529.3 | patience  3 |  60.5s
+epoch  44/50 | train cost  31433.8 | loss -3129.2324 | val cost  28586.7 | patience  4 |  60.5s
+epoch  45/50 | train cost  31431.7 | loss -3105.0848 | val cost  28851.0 | patience  5 |  60.3s
+epoch  46/50 | train cost  31406.3 | loss -3096.6335 | val cost  28502.5 | patience  6 |  60.4s
+epoch  47/50 | train cost  31429.8 | loss -3149.8582 | val cost  28634.4 | patience  7 |  60.3s
+epoch  48/50 | train cost  31411.0 | loss -3114.4140 | val cost  28551.0 | patience  8 |  60.4s
+epoch  49/50 | train cost  31400.8 | loss -3070.0920 | val cost  28383.7 | patience  0 |  60.3s
+epoch  50/50 | train cost  31399.9 | loss -3116.7975 | val cost  28418.7 | patience  1 |  60.3s
+Wrote training log to models\matnet_cvrp_n20_log.json
+[21:29:24.72] MatNet checkpoint: models\matnet_cvrp_n20_best.pt 
+ 
+[21:29:24.72] Step 4: Training Vanilla-AM (N=20)... 
+Downloading OSM graph for evaluation set @(22.198, 113.543), r=2000 m...
+Built 16 OSM evaluation instances.
+Training baseline policy (529,152 params)
+epoch   1/50 | train cost  39262.0 | loss -6972.7464 | val cost  29737.3 | patience  0 |  58.9s
+epoch   2/50 | train cost  34173.2 | loss -4249.6362 | val cost  29477.7 | patience  0 |  57.7s
+epoch   3/50 | train cost  33611.8 | loss -3415.6448 | val cost  29294.2 | patience  0 |  57.7s
+epoch   4/50 | train cost  33347.4 | loss -3400.6847 | val cost  29014.9 | patience  0 |  57.5s
+epoch   5/50 | train cost  32968.6 | loss -3027.8514 | val cost  29157.2 | patience  1 |  57.1s
+epoch   6/50 | train cost  32709.8 | loss -3002.1939 | val cost  28796.9 | patience  0 |  56.7s
+epoch   7/50 | train cost  32497.8 | loss -3225.1372 | val cost  28500.1 | patience  0 |  56.4s
+epoch   8/50 | train cost  32383.5 | loss -3186.1722 | val cost  28377.1 | patience  0 |  56.4s
+epoch   9/50 | train cost  32277.4 | loss -3331.4511 | val cost  28769.0 | patience  1 |  56.0s
+epoch  10/50 | train cost  32186.3 | loss -3206.2758 | val cost  28485.3 | patience  2 |  56.3s
+epoch  11/50 | train cost  32067.7 | loss -3199.4665 | val cost  28623.5 | patience  3 |  56.0s
+epoch  12/50 | train cost  32037.0 | loss -3315.8706 | val cost  28545.5 | patience  4 |  56.1s
+epoch  13/50 | train cost  31988.7 | loss -3255.7810 | val cost  28432.1 | patience  5 |  56.0s
+epoch  14/50 | train cost  31955.8 | loss -3243.0372 | val cost  28769.8 | patience  6 |  56.0s
+epoch  15/50 | train cost  31936.7 | loss -3254.5764 | val cost  28009.2 | patience  0 |  55.8s
+epoch  16/50 | train cost  31881.4 | loss -3277.5669 | val cost  28556.9 | patience  1 |  56.0s
+epoch  17/50 | train cost  31849.6 | loss -3205.2053 | val cost  28476.0 | patience  2 |  55.9s
+epoch  18/50 | train cost  31800.5 | loss -3169.0008 | val cost  28707.2 | patience  3 |  56.2s
+epoch  19/50 | train cost  31765.6 | loss -3234.7192 | val cost  28623.5 | patience  4 |  55.9s
+epoch  20/50 | train cost  31726.4 | loss -3210.5022 | val cost  28526.8 | patience  5 |  55.9s
+epoch  21/50 | train cost  31683.1 | loss -3173.4831 | val cost  28455.3 | patience  6 |  55.8s
+epoch  22/50 | train cost  31684.4 | loss -3199.8985 | val cost  28526.2 | patience  7 |  55.8s
+epoch  23/50 | train cost  31633.8 | loss -3117.2615 | val cost  28675.5 | patience  8 |  56.0s
+epoch  24/50 | train cost  31648.2 | loss -3152.7888 | val cost  28344.4 | patience  9 |  55.9s
+epoch  25/50 | train cost  31636.4 | loss -3091.5487 | val cost  28456.3 | patience 10 |  55.8s
+epoch  26/50 | train cost  31590.8 | loss -3199.7645 | val cost  28334.0 | patience 11 |  55.7s
+epoch  27/50 | train cost  31595.6 | loss -3166.6707 | val cost  28521.1 | patience 12 |  55.9s
+epoch  28/50 | train cost  31540.1 | loss -3047.2631 | val cost  28391.5 | patience 13 |  55.8s
+epoch  29/50 | train cost  31537.9 | loss -3187.8340 | val cost  28561.2 | patience 14 |  55.6s
+epoch  30/50 | train cost  31537.3 | loss -3094.1176 | val cost  28497.6 | patience 15 |  55.6s
+Early stopping: no val improvement for 15 consecutive evals (best val=28009.2). Halting training.
+Wrote training log to models\baseline_am_n20_log.json
+[21:57:38.89] Baseline checkpoint: models\baseline_am_n20_best.pt 
+ 
+[21:57:38.89] Step 5: Grid comparison on Macau... 
+Command: python -m src.experiments_full --config config.yaml --matnet-checkpoint models\matnet_cvrp_n20_best.pt --baseline-checkpoint models\baseline_am_n20_best.pt 
+  Warning: Mong_Ha_Dist was on an unreachable road node; re-snapped to the nearest depot-reachable node.
+Graph: 1853 nodes, 3229 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.0783
+
+--- OR-Tools on SE ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on SM ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on SR ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on AR ---
+  -> 3 route(s) produced.
+
+--- GA on SE ---
+  -> 3 route(s) produced.
+
+--- GA on SM ---
+  -> 3 route(s) produced.
+
+--- GA on SR ---
+  -> 3 route(s) produced.
+
+--- GA on AR ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on SE ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on SM ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on SR ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on AR ---
+  -> 3 route(s) produced.
+
+--- Vanilla-AM on SE ---
+  -> 3 route(s) produced.
+
+--- Vanilla-AM on SM ---
+  -> 3 route(s) produced.
+
+--- Vanilla-AM on SR ---
+  -> 3 route(s) produced.
+
+--- Vanilla-AM on AR ---
+  -> 3 route(s) produced.
+
+Wrote results_macau\summary_full.csv
+
+========== RESULTS (km, kg CO2) ==========
+Solver        Variant    Distance (km)    CO2 (kg)
+OR-Tools      SE                 27.73     311.270
+OR-Tools      SM                 26.82     301.473
+OR-Tools      SR                 27.77     312.932
+OR-Tools      AR                 24.20     272.486
+GA            SE                 28.27     318.173
+GA            SM                 30.92     348.348
+GA            SR                 26.53     298.767
+GA            AR                 26.39     297.031
+MatNet-CVRP   SE                 30.79     345.911
+MatNet-CVRP   SM                 29.53     331.524
+MatNet-CVRP   SR                 27.94     313.356
+MatNet-CVRP   AR                 26.96     302.579
+Vanilla-AM    SE                 30.32     340.501
+Vanilla-AM    SM                 30.54     342.766
+Vanilla-AM    SR                 30.04     337.310
+Vanilla-AM    AR                 29.64     333.047
+
+All outputs written to: D:\GitHub Project\acvrp-co2\results_macau
+[22:03:48.64] Step 5 OK. 
+ 
+[22:03:48.65] Step 5b: Grid comparison on Hong Kong... 
+Command: python -m src.experiments_full --config config_hongkong.yaml --matnet-checkpoint models\matnet_cvrp_n20_best.pt --baseline-checkpoint models\baseline_am_n20_best.pt 
+Graph: 972 nodes, 1727 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.1232
+
+--- OR-Tools on SE ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on SM ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on SR ---
+  -> 3 route(s) produced.
+
+--- OR-Tools on AR ---
+  -> 3 route(s) produced.
+
+--- GA on SE ---
+  -> 3 route(s) produced.
+
+--- GA on SM ---
+  -> 3 route(s) produced.
+
+--- GA on SR ---
+  -> 3 route(s) produced.
+
+--- GA on AR ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on SE ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on SM ---
+  -> 4 route(s) produced.
+
+--- MatNet-CVRP on SR ---
+  -> 3 route(s) produced.
+
+--- MatNet-CVRP on AR ---
+  -> 4 route(s) produced.
+
+--- Vanilla-AM on SE ---
+  -> 4 route(s) produced.
+
+--- Vanilla-AM on SM ---
+  -> 5 route(s) produced.
+
+--- Vanilla-AM on SR ---
+  -> 4 route(s) produced.
+
+--- Vanilla-AM on AR ---
+  -> 4 route(s) produced.
+
+Wrote results_hongkong\summary_full.csv
+
+========== RESULTS (km, kg CO2) ==========
+Solver        Variant    Distance (km)    CO2 (kg)
+OR-Tools      SE                 26.75     301.619
+OR-Tools      SM                 27.40     309.102
+OR-Tools      SR                 20.09     226.234
+OR-Tools      AR                 19.28     216.965
+GA            SE                 29.71     335.244
+GA            SM                 27.43     308.891
+GA            SR                 23.92     269.651
+GA            AR                 22.21     250.035
+MatNet-CVRP   SE                 27.93     314.370
+MatNet-CVRP   SM                 32.37     364.513
+MatNet-CVRP   SR                 26.83     302.576
+MatNet-CVRP   AR                 25.81     290.715
+Vanilla-AM    SE                 27.24     306.944
+Vanilla-AM    SM                 24.46     274.948
+Vanilla-AM    SR                 25.95     291.419
+Vanilla-AM    AR                 26.57     299.435
+
+All outputs written to: D:\GitHub Project\acvrp-co2\results_hongkong
+[22:03:48.65] Step 5b OK. 
+ 
+============================================================ 
+Pipeline finished: 2026/05/21 ¶g¥| 22:09:58.37 
+ 
+Step results: 
+  Step 1  Macau classical OK 
+  Step 1b HK classical OK 
+  Step 3  MatNet training OK 
+  Step 4  Vanilla training OK 
+  Step 5  Macau grid OK 
+  Step 5b HK grid OK 
+ 
+Result files: 
+  results_macau\summary.csv present 
+  results_macau\summary_full.csv present 
+  results_hongkong\summary.csv present 
+  results_hongkong\summary_full.csv present 
+============================================================ 
