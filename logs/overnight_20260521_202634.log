@@ -1,0 +1,16 @@
+ 
+============================================================ 
+ACVRP-CO2 overnight pipeline (Macau + Hong Kong) 
+Started: 2026/05/21 ¶g¥| 20:26:34.63 
+Working dir: D:\GitHub Project\acvrp-co2 
+Log file:    logs\overnight_20260521_202634.log 
+============================================================ 
+ 
+ 
+[20:26:34.64] Step 0: Environment sanity check... 
+All imports OK
+Torch: 2.9.1+cu130
+CUDA available: True
+GPU: NVIDIA GeForce RTX 5070
+ 
+[20:26:37.24] Step 1: Classical experiment (Macau)... 

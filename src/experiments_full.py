@@ -211,7 +211,9 @@ def run(
         radius_m=cfg["region"]["radius_m"],
         network_type=cfg["region"]["network_type"],
     )
-    node_ids = snap_customers_to_nodes(graph, customers)
+    node_ids = snap_customers_to_nodes(
+        graph, customers, depot_index=cfg["data"]["depot_index"]
+    )
     print(f"Graph: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
     print(f"Customers: {len(customers) - 1} (+1 depot)")
 

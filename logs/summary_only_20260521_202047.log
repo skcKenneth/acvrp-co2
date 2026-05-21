@@ -1,0 +1,22 @@
+ 
+Summary-only test 
+Started: 2026/05/21 ¶g¥| 20:20:47.24 
+ 
+ 
+============================================================ 
+Pipeline finished: 2026/05/21 ¶g¥| 20:20:47.25 
+ 
+Step results: 
+  Step 1  Macau classical OK 
+  Step 1b HK classical OK 
+  Step 3  MatNet training OK 
+  Step 4  Vanilla training OK 
+  Step 5  Macau grid OK 
+  Step 5b HK grid OK 
+ 
+Result files: 
+  results_macau\summary.csv present 
+  results_macau\summary_full.csv present 
+  results_hongkong\summary.csv present 
+  results_hongkong\summary_full.csv present 
+============================================================ 

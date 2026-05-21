@@ -78,7 +78,9 @@ def run_experiment(cfg_path: str, solver: str = "ortools") -> None:
         radius_m=cfg["region"]["radius_m"],
         network_type=cfg["region"]["network_type"],
     )
-    node_ids = snap_customers_to_nodes(graph, customers)
+    node_ids = snap_customers_to_nodes(
+        graph, customers, depot_index=cfg["data"]["depot_index"]
+    )
     print(f"Graph: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges")
     print(f"Customers: {len(customers) - 1} (+1 depot)")
 
@@ -175,12 +177,19 @@ def run_experiment(cfg_path: str, solver: str = "ortools") -> None:
     print(f"{'Variant':<8}{'Distance (km)':>16}{'Fuel (L)':>12}{'CO2 (kg)':>12}")
     for v in variants:
         ev = evaluations[v]
+        fuel_str = f"{ev.fuel_l:>12.3f}" if ev.ar_feasible else f"{'nan':>12}"
+        co2_str = f"{ev.co2_kg:>12.3f}" if ev.ar_feasible else f"{'nan':>12}"
         print(
             f"{v:<8}"
             f"{ev.distance_m / 1000.0:>16.2f}"
-            f"{ev.fuel_l:>12.3f}"
-            f"{ev.co2_kg:>12.3f}"
+            f"{fuel_str}"
+            f"{co2_str}"
         )
+        if ev.infeasible_legs:
+            print(
+                f"         ({ev.infeasible_legs} route leg(s) unreachable on AR — "
+                f"fuel/CO2 not defined)"
+            )
     print("\nAsymmetry penalties (vs. AR baseline):")
     for v, p in penalties.items():
         print(

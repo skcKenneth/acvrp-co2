@@ -13,10 +13,12 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Sequence
 
 import networkx as nx
+import numpy as np
 import pandas as pd
+from scipy.spatial import cKDTree
 
 # osmnx is heavy and pulls in geospatial deps; import lazily inside the
 # functions that need it so that `Customer` etc. remain usable without it.
@@ -123,19 +125,76 @@ def load_customers(csv_path: str | os.PathLike) -> List[Customer]:
     return customers
 
 
+def _depot_strongly_connected_component(
+    graph: nx.MultiDiGraph,
+    depot_node: int,
+) -> set[int]:
+    """Nodes in the same directed strongly-connected component as the depot."""
+    for component in nx.strongly_connected_components(graph):
+        if depot_node in component:
+            return component
+    raise ValueError(f"Depot OSM node {depot_node} is not present in the graph.")
+
+
+def _nearest_nodes_in_subset(
+    graph: nx.MultiDiGraph,
+    lons: Sequence[float],
+    lats: Sequence[float],
+    candidate_nodes: Sequence[int],
+) -> List[int]:
+    """Nearest-node snap restricted to ``candidate_nodes`` (graph x/y = lon/lat)."""
+    if not candidate_nodes:
+        raise ValueError("candidate_nodes must not be empty.")
+
+    xs = np.array([graph.nodes[n]["x"] for n in candidate_nodes], dtype=float)
+    ys = np.array([graph.nodes[n]["y"] for n in candidate_nodes], dtype=float)
+    tree = cKDTree(np.column_stack([xs, ys]))
+    points = np.column_stack(
+        [np.asarray(lons, dtype=float), np.asarray(lats, dtype=float)]
+    )
+    _, indices = tree.query(points)
+    return [candidate_nodes[int(i)] for i in np.atleast_1d(indices)]
+
+
 def snap_customers_to_nodes(
     graph: nx.MultiDiGraph,
     customers: List[Customer],
+    *,
+    depot_index: int = 0,
+    warn_on_resnap: bool = True,
 ) -> List[int]:
     """
     Map each customer's (lat, lon) to its nearest OSM node id.
 
-    OSMnx's nearest_nodes uses a k-d tree under the hood, so this is
-    efficient even for hundreds of points.
+    On one-way road networks the geographically nearest node can lie
+    outside the depot's strongly-connected component, which makes some
+    customer-to-customer legs unreachable and breaks AR fuel / CO2 totals.
+    Customers snapped outside that component are re-snapped to the
+    nearest node that *is* reachable from (and can reach) the depot.
     """
     import osmnx as ox  # lazy import
 
     lons = [c.lon for c in customers]
     lats = [c.lat for c in customers]
-    node_ids = ox.nearest_nodes(graph, X=lons, Y=lats)
-    return list(node_ids)
+    node_ids = list(ox.nearest_nodes(graph, X=lons, Y=lats))
+
+    depot_node = node_ids[depot_index]
+    reachable = _depot_strongly_connected_component(graph, depot_node)
+    unreachable_indices = [i for i, nid in enumerate(node_ids) if nid not in reachable]
+
+    if unreachable_indices:
+        replacement = _nearest_nodes_in_subset(
+            graph,
+            [lons[i] for i in unreachable_indices],
+            [lats[i] for i in unreachable_indices],
+            list(reachable),
+        )
+        for i, new_node in zip(unreachable_indices, replacement):
+            if warn_on_resnap:
+                print(
+                    f"  Warning: {customers[i].name} was on an unreachable "
+                    f"road node; re-snapped to the nearest depot-reachable node."
+                )
+            node_ids[i] = new_node
+
+    return node_ids

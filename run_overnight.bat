@@ -9,13 +9,55 @@ REM    - Detects actual checkpoint filenames (handles both old and new naming).
 REM    - Verifies the .pt file exists before claiming success.
 REM    - Prints a clear summary table at the end.
 REM    - Step 5 / 5b explicitly check that NCO models loaded successfully.
+REM
+REM  Optional flags:
+REM    /summary-only   Skip all steps; only run the final summary block
+REM                    (for testing batch parsing after an overnight run).
+REM    /shutdown       Power off 60 s after the pipeline completes.
 REM ============================================================================
 
 setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
 
-REM --- Time-stamp via PowerShell ---
+if /i "%~1"=="/summary-only" goto summary_only
+goto start_full_pipeline
+
+REM ===========================================================================
+REM /summary-only  -- test the tail without re-running the pipeline
+REM ===========================================================================
+:summary_only
+for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"`) do set STAMP=%%t
+if "!STAMP!"=="" set STAMP=run
+if not exist logs mkdir logs
+set LOG=logs\summary_only_!STAMP!.log
+echo. > "%LOG%"
+echo Summary-only test >> "%LOG%"
+echo Started: %date% %time% >> "%LOG%"
+echo. >> "%LOG%"
+
+set MACAU_S1_OK=0
+if exist results_macau\summary.csv set MACAU_S1_OK=1
+set HK_S1_OK=0
+if exist results_hongkong\summary.csv set HK_S1_OK=1
+set MATNET_TRAIN_OK=0
+if exist models\matnet_cvrp_n20_best.pt set MATNET_TRAIN_OK=1
+if "!MATNET_TRAIN_OK!"=="0" if exist models\matnet_cvrp_best.pt set MATNET_TRAIN_OK=1
+set BASELINE_TRAIN_OK=0
+if exist models\baseline_am_n20_best.pt set BASELINE_TRAIN_OK=1
+if "!BASELINE_TRAIN_OK!"=="0" if exist models\baseline_am_best.pt set BASELINE_TRAIN_OK=1
+set MACAU_S5_OK=0
+if exist results_macau\summary_full.csv set MACAU_S5_OK=1
+set HK_S5_OK=0
+if exist results_hongkong\summary_full.csv set HK_S5_OK=1
+
+echo Summary-only mode: checking outputs on disk, no Python steps.
+echo Logging to %LOG%
+echo.
+goto write_summary
+
+:start_full_pipeline
+REM --- Time-stamp via PowerShell (full pipeline) ---
 for /f "usebackq delims=" %%t in (`powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"`) do set STAMP=%%t
 if "!STAMP!"=="" set STAMP=run
 
@@ -188,20 +230,23 @@ if exist config_hongkong.yaml if exist data\customers_hongkong.csv (
     echo [%time%] Step 5b skipped: HK config or data missing. >> "%LOG%"
 )
 
+goto write_summary
+
 REM ===========================================================================
-REM Summary
+REM Summary (shared by full pipeline and /summary-only)
 REM ===========================================================================
+:write_summary
 echo. >> "%LOG%"
 echo ============================================================ >> "%LOG%"
 echo Pipeline finished: %date% %time% >> "%LOG%"
 echo. >> "%LOG%"
 echo Step results: >> "%LOG%"
-call :label_ok "  Step 1  (Macau classical)" !MACAU_S1_OK!
-call :label_ok "  Step 1b (HK classical)   " !HK_S1_OK!
-call :label_ok "  Step 3  (MatNet training)" !MATNET_TRAIN_OK!
-call :label_ok "  Step 4  (Vanilla training)" !BASELINE_TRAIN_OK!
-call :label_ok "  Step 5  (Macau grid)     " !MACAU_S5_OK!
-call :label_ok "  Step 5b (HK grid)        " !HK_S5_OK!
+call :label_ok "  Step 1  Macau classical" !MACAU_S1_OK!
+call :label_ok "  Step 1b HK classical" !HK_S1_OK!
+call :label_ok "  Step 3  MatNet training" !MATNET_TRAIN_OK!
+call :label_ok "  Step 4  Vanilla training" !BASELINE_TRAIN_OK!
+call :label_ok "  Step 5  Macau grid" !MACAU_S5_OK!
+call :label_ok "  Step 5b HK grid" !HK_S5_OK!
 echo. >> "%LOG%"
 echo Result files: >> "%LOG%"
 call :check_file "results_macau\summary.csv"
@@ -211,18 +256,24 @@ call :check_file "results_hongkong\summary_full.csv"
 echo ============================================================ >> "%LOG%"
 
 echo.
-echo Pipeline finished. See %LOG% for the full log.
-echo Run check_status.bat for a summary.
+if /i "%~1"=="/summary-only" (
+    echo Summary-only test finished. See %LOG%
+) else (
+    echo Pipeline finished. See %LOG% for the full log.
+    echo Run check_status.bat for a summary.
+)
 
 REM ===========================================================================
 REM Optional shutdown
 REM ===========================================================================
+if /i "%~1"=="/summary-only" goto summary_only_exit
 if /i "%~1"=="/shutdown" (
     echo Shutdown requested. PC will power off in 60 seconds.
     echo To cancel: open a new cmd and run  shutdown /a
     shutdown /s /t 60 /c "ACVRP-CO2 overnight pipeline complete."
 )
 
+:summary_only_exit
 endlocal
 exit /b 0
 
@@ -233,16 +284,16 @@ REM ===========================================================================
 
 :label_ok
 if "%~2"=="1" (
-    echo %~1 [OK] >> "%LOG%"
+    echo %~1 OK >> "%LOG%"
 ) else (
-    echo %~1 [FAIL or SKIP] >> "%LOG%"
+    echo %~1 FAIL-or-SKIP >> "%LOG%"
 )
 exit /b 0
 
 :check_file
 if exist "%~1" (
-    echo   %~1 [present] >> "%LOG%"
+    echo   %~1 present >> "%LOG%"
 ) else (
-    echo   %~1 [missing] >> "%LOG%"
+    echo   %~1 missing >> "%LOG%"
 )
 exit /b 0
