@@ -13,3 +13,74 @@ CUDA available: True
 GPU: NVIDIA GeForce RTX 5070
  
 [ 6:33:37.57] Step 1: Classical experiment (Macau)... 
+Warning: Mong_Ha_Dist snapped to unreachable node 7264016227; using 9026600176 instead.
+Graph: 1853 nodes, 3229 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.0783
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 27.73     116.145     311.270
+SM                 26.82     112.490     301.473
+SR                 27.77     116.766     312.932
+AR                 24.20     101.674     272.486
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +14.55%, CO2 +14.23%
+  SM: distance +10.81%, CO2 +10.64%
+  SR: distance +14.71%, CO2 +14.84%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_macau
+[ 6:39:40.26] Step 1 OK. 
+ 
+[ 6:39:40.26] Step 1b: Classical experiment Hong Kong... 
+Graph: 972 nodes, 1727 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.1232
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 26.75     112.544     301.619
+SM                 27.40     115.337     309.102
+SR                 20.09      84.416     226.234
+AR                 19.28      80.957     216.965
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +38.75%, CO2 +39.02%
+  SM: distance +42.13%, CO2 +42.47%
+  SR: distance +4.25%, CO2 +4.27%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_hongkong
+[ 6:39:40.26] Step 1b OK. 
+ 
+[ 6:45:42.57] Step 2: NCO smoke test... 
+epoch   1/3 | train cost  32738.6 | loss -1374.2082 | val cost  28219.0 |   2.8s
+epoch   2/3 | train cost  29883.5 | loss -1810.5436 | val cost  28649.6 |   2.3s
+epoch   3/3 | train cost  28672.2 | loss -1972.2070 | val cost  28484.6 |   2.3s
+[ 6:45:55.53] Step 2 OK. 
+ 
+[ 6:45:55.53] Step 3: Training MatNet-CVRP (N=50)... 
