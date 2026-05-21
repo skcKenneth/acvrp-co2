@@ -103,7 +103,7 @@ Requires **Python 3.10+** and (for the neural pipeline) a CUDA-capable
 NVIDIA GPU. CPU-only training is possible but slow.
 
 ```bash
-git clone https://github.com/<your-username>/acvrp-co2.git
+git clone https://github.com/skckenneth/acvrp-co2.git
 cd acvrp-co2
 python -m venv .venv
 source .venv/bin/activate                # Windows: .venv\Scripts\activate
