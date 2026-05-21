@@ -84,3 +84,110 @@ epoch   3/3 | train cost  28672.2 | loss -1972.2070 | val cost  28484.6 |   2.3s
 [ 6:45:55.53] Step 2 OK. 
  
 [ 6:45:55.53] Step 3: Training MatNet-CVRP (N=50)... 
+Downloading OSM graph for evaluation set @(22.198, 113.543), r=2500 m...
+Built 16 OSM evaluation instances.
+Training matnet policy (1,592,576 params)
+epoch   1/100 | train cost  80056.1 | loss -14458.0145 | val cost  59901.3 | 200.2s
+epoch   2/100 | train cost  57359.6 | loss -16584.3780 | val cost  57120.2 | 203.2s
+epoch   3/100 | train cost  55434.1 | loss -13891.1976 | val cost  57427.3 | 202.4s
+epoch   4/100 | train cost  54130.9 | loss -13191.3380 | val cost  57046.7 | 202.2s
+epoch   5/100 | train cost  53335.8 | loss -12801.7923 | val cost  56394.7 | 202.2s
+epoch   6/100 | train cost  52654.0 | loss -12570.3378 | val cost  55053.2 | 202.0s
+epoch   7/100 | train cost  52186.7 | loss -12153.9798 | val cost  56175.5 | 201.4s
+epoch   8/100 | train cost  51632.0 | loss -11902.5664 | val cost  54882.8 | 201.0s
+epoch   9/100 | train cost  51187.9 | loss -11835.3227 | val cost  58149.5 | 200.2s
+epoch  10/100 | train cost  50838.0 | loss -11595.3894 | val cost  54229.4 | 199.8s
+epoch  11/100 | train cost  50638.7 | loss -11415.7678 | val cost  54333.4 | 199.3s
+epoch  12/100 | train cost  50405.3 | loss -11252.6854 | val cost  57684.4 | 199.1s
+epoch  13/100 | train cost  50261.3 | loss -11335.4428 | val cost  53922.6 | 199.2s
+epoch  14/100 | train cost  50041.6 | loss -11078.0371 | val cost  54613.9 | 198.2s
+epoch  15/100 | train cost  49961.0 | loss -11325.4106 | val cost  53902.9 | 196.5s
+epoch  16/100 | train cost  49821.5 | loss -11019.3641 | val cost  53615.4 | 196.5s
+epoch  17/100 | train cost  49740.4 | loss -10920.2216 | val cost  54918.5 | 196.7s
+epoch  18/100 | train cost  49629.3 | loss -11067.0888 | val cost  52869.7 | 196.3s
+epoch  19/100 | train cost  49566.3 | loss -11075.4259 | val cost  52414.6 | 196.3s
+epoch  20/100 | train cost  49471.8 | loss -10938.4421 | val cost  58805.0 | 196.1s
+epoch  21/100 | train cost  49408.4 | loss -10991.7144 | val cost  55422.3 | 196.7s
+epoch  22/100 | train cost  49315.1 | loss -10705.6584 | val cost  57455.0 | 196.2s
+epoch  23/100 | train cost  49241.4 | loss -10606.3730 | val cost  54168.7 | 196.1s
+epoch  24/100 | train cost  49147.6 | loss -10350.1923 | val cost  52167.2 | 195.3s
+epoch  25/100 | train cost  49109.1 | loss -10224.0332 | val cost  55699.4 | 189.3s
+epoch  26/100 | train cost  49047.3 | loss -10062.9589 | val cost  52823.0 | 194.2s
+epoch  27/100 | train cost  48987.5 | loss -9975.7272 | val cost  53599.7 | 192.9s
+epoch  28/100 | train cost  48955.6 | loss -10237.4308 | val cost  52703.3 | 189.9s
+epoch  29/100 | train cost  48900.4 | loss -9951.8520 | val cost  52380.3 | 189.7s
+epoch  30/100 | train cost  48892.6 | loss -10003.7068 | val cost  52034.6 | 189.3s
+epoch  31/100 | train cost  48794.7 | loss -9845.0289 | val cost  52618.0 | 189.5s
+epoch  32/100 | train cost  48779.3 | loss -9829.8813 | val cost  51786.3 | 189.6s
+epoch  33/100 | train cost  48754.1 | loss -9645.8451 | val cost  52410.3 | 189.2s
+epoch  34/100 | train cost  48708.6 | loss -9559.7910 | val cost  52510.5 | 189.3s
+epoch  35/100 | train cost  48644.8 | loss -9570.7481 | val cost  52563.5 | 189.5s
+epoch  36/100 | train cost  48613.5 | loss -9659.3141 | val cost  53208.7 | 192.3s
+epoch  37/100 | train cost  48604.8 | loss -9518.1856 | val cost  54345.6 | 189.4s
+epoch  38/100 | train cost  48561.5 | loss -9548.6894 | val cost  52736.5 | 189.9s
+epoch  39/100 | train cost  48534.3 | loss -9411.6068 | val cost  52001.5 | 189.4s
+epoch  40/100 | train cost  48468.2 | loss -9170.0396 | val cost  52948.1 | 189.7s
+epoch  41/100 | train cost  48447.4 | loss -9361.9726 | val cost  52227.1 | 189.4s
+epoch  42/100 | train cost  48444.1 | loss -9282.0944 | val cost  50734.9 | 189.5s
+epoch  43/100 | train cost  48421.6 | loss -9299.5186 | val cost  52207.8 | 190.0s
+epoch  44/100 | train cost  48410.5 | loss -9168.2033 | val cost  52023.5 | 196.3s
+epoch  45/100 | train cost  48376.4 | loss -9247.5113 | val cost  51812.8 | 195.9s
+epoch  46/100 | train cost  48310.6 | loss -9279.8203 | val cost  52429.0 | 195.9s
+epoch  47/100 | train cost  48281.3 | loss -9053.8403 | val cost  52733.8 | 196.0s
+epoch  48/100 | train cost  48276.1 | loss -9037.3607 | val cost  52475.7 | 196.4s
+epoch  49/100 | train cost  48279.9 | loss -8924.8523 | val cost  52540.3 | 196.0s
+epoch  50/100 | train cost  48221.7 | loss -8811.4078 | val cost  51401.8 | 196.0s
+epoch  51/100 | train cost  48223.6 | loss -9026.9607 | val cost  51530.9 | 196.1s
+epoch  52/100 | train cost  48183.5 | loss -8902.0613 | val cost  51742.6 | 195.7s
+epoch  53/100 | train cost  48145.8 | loss -8782.4974 | val cost  52189.2 | 196.3s
+epoch  54/100 | train cost  48113.6 | loss -8627.0617 | val cost  51478.1 | 195.8s
+epoch  55/100 | train cost  48123.5 | loss -8751.3170 | val cost  51887.6 | 195.9s
+epoch  56/100 | train cost  48102.5 | loss -8575.9889 | val cost  51873.9 | 195.9s
+epoch  57/100 | train cost  48079.8 | loss -8588.3082 | val cost  52204.0 | 195.9s
+epoch  58/100 | train cost  48057.9 | loss -8710.2857 | val cost  51869.7 | 195.7s
+epoch  59/100 | train cost  48015.4 | loss -8490.9392 | val cost  51758.4 | 194.8s
+epoch  60/100 | train cost  47976.8 | loss -8471.3715 | val cost  51524.1 | 193.1s
+epoch  61/100 | train cost  47989.6 | loss -8377.4710 | val cost  52042.8 | 190.7s
+epoch  62/100 | train cost  47943.0 | loss -8339.8238 | val cost  52034.1 | 189.5s
+epoch  63/100 | train cost  47958.0 | loss -8285.4413 | val cost  52715.1 | 189.6s
+epoch  64/100 | train cost  47881.1 | loss -8459.7662 | val cost  52370.3 | 189.6s
+epoch  65/100 | train cost  47899.7 | loss -8326.2477 | val cost  51791.3 | 189.8s
+epoch  66/100 | train cost  47885.6 | loss -8255.9362 | val cost  52416.7 | 191.5s
+epoch  67/100 | train cost  47871.3 | loss -8291.3730 | val cost  52309.0 | 193.7s
+epoch  68/100 | train cost  47825.7 | loss -8204.1156 | val cost  52718.3 | 194.1s
+epoch  69/100 | train cost  47802.3 | loss -8171.1204 | val cost  52104.2 | 193.8s
+epoch  70/100 | train cost  47800.0 | loss -8141.4434 | val cost  52578.3 | 193.8s
+epoch  71/100 | train cost  47804.4 | loss -8045.7293 | val cost  52346.4 | 194.0s
+epoch  72/100 | train cost  47775.6 | loss -7993.9818 | val cost  51558.8 | 193.5s
+epoch  73/100 | train cost  47770.3 | loss -8083.4484 | val cost  52387.3 | 194.1s
+epoch  74/100 | train cost  47746.3 | loss -8000.5467 | val cost  51582.7 | 197.1s
+epoch  75/100 | train cost  47727.3 | loss -7960.2275 | val cost  52030.1 | 193.9s
+epoch  76/100 | train cost  47733.5 | loss -7906.2092 | val cost  52005.2 | 193.7s
+epoch  77/100 | train cost  47704.8 | loss -7966.3356 | val cost  52192.8 | 193.9s
+epoch  78/100 | train cost  47701.7 | loss -7969.6250 | val cost  52385.9 | 195.2s
+epoch  79/100 | train cost  47679.7 | loss -7940.8354 | val cost  51641.7 | 194.0s
+epoch  80/100 | train cost  47689.9 | loss -7939.7837 | val cost  52362.3 | 189.9s
+epoch  81/100 | train cost  47689.1 | loss -7814.9310 | val cost  52305.5 | 189.7s
+epoch  82/100 | train cost  47657.0 | loss -7855.8851 | val cost  52590.5 | 189.5s
+epoch  83/100 | train cost  47657.0 | loss -7825.0578 | val cost  52513.7 | 189.8s
+epoch  84/100 | train cost  47660.8 | loss -7815.2765 | val cost  52079.3 | 190.0s
+epoch  85/100 | train cost  47652.5 | loss -7905.9335 | val cost  51796.8 | 189.7s
+epoch  86/100 | train cost  47651.1 | loss -7881.1273 | val cost  52151.1 | 189.7s
+epoch  87/100 | train cost  47625.9 | loss -7850.6339 | val cost  52444.0 | 189.9s
+epoch  88/100 | train cost  47591.8 | loss -7746.8004 | val cost  52205.9 | 189.6s
+epoch  89/100 | train cost  47615.6 | loss -7812.3249 | val cost  51879.3 | 190.0s
+epoch  90/100 | train cost  47622.3 | loss -7747.3551 | val cost  51872.4 | 189.7s
+epoch  91/100 | train cost  47588.1 | loss -7748.5463 | val cost  51994.5 | 190.0s
+epoch  92/100 | train cost  47613.1 | loss -7738.5136 | val cost  51653.3 | 190.1s
+epoch  93/100 | train cost  47595.4 | loss -7810.3038 | val cost  52184.5 | 190.0s
+epoch  94/100 | train cost  47594.5 | loss -7752.9486 | val cost  52240.4 | 193.6s
+epoch  95/100 | train cost  47609.0 | loss -7769.9926 | val cost  51981.5 | 193.5s
+epoch  96/100 | train cost  47564.5 | loss -7847.6839 | val cost  52177.2 | 193.9s
+epoch  97/100 | train cost  47595.4 | loss -7754.4151 | val cost  52179.3 | 193.6s
+epoch  98/100 | train cost  47583.9 | loss -7874.4462 | val cost  52318.2 | 193.3s
+epoch  99/100 | train cost  47582.5 | loss -7859.4478 | val cost  52237.0 | 189.8s
+epoch 100/100 | train cost  47563.3 | loss -7876.4392 | val cost  52288.0 | 189.8s
+Wrote training log to models\matnet_cvrp_log.json
+[12:09:08.20] Step 3 OK. 
+ 
+[12:09:08.21] Step 4: Training Vanilla-AM baseline (N=50)... 
