@@ -111,6 +111,7 @@ def make_osm_instance(
     city_name: str = "osm",
     demand_low: int = 1,
     demand_high: int = 9,
+    max_retries: int = 20,
 ) -> CVRPInstance:
     """
     Sample `num_customers` random nodes from a road graph and build an
@@ -118,6 +119,12 @@ def make_osm_instance(
 
     The depot is sampled from the most central nodes (defined here as
     the nearest node to the graph's centroid in lat/lon).
+
+    If a sampled customer set produces unreachable arcs (i.e. inf in
+    the directed shortest-path matrix), we retry up to `max_retries`
+    times with a fresh sample before falling back to sanitising any
+    remaining infinities. This is iterative rather than recursive to
+    avoid stack overflow on pathological graphs.
     """
     n = num_customers + 1
     all_nodes = list(graph.nodes(data=True))
@@ -125,40 +132,48 @@ def make_osm_instance(
     # Depot: most central node by lat/lon centroid
     mean_y = np.mean([d["y"] for _, d in all_nodes])
     mean_x = np.mean([d["x"] for _, d in all_nodes])
-    depot_id = min(all_nodes, key=lambda nd: (nd[1]["y"] - mean_y) ** 2 + (nd[1]["x"] - mean_x) ** 2)[0]
+    depot_id = min(
+        all_nodes,
+        key=lambda nd: (nd[1]["y"] - mean_y) ** 2 + (nd[1]["x"] - mean_x) ** 2,
+    )[0]
+    candidate_pool = [nid for nid, _ in all_nodes if nid != depot_id]
 
-    sampled = rng.choice(
-        [nid for nid, _ in all_nodes if nid != depot_id],
-        size=num_customers,
-        replace=False,
-    )
-    node_ids = [depot_id] + list(sampled)
+    for attempt in range(max_retries):
+        sampled = rng.choice(candidate_pool, size=num_customers, replace=False)
+        node_ids = [depot_id] + list(sampled)
 
-    # Coordinates for visualisation
-    coords = np.array([[graph.nodes[nid]["y"], graph.nodes[nid]["x"]] for nid in node_ids])
-
-    # Directed all-pairs shortest path on edge 'length' (metres)
-    mat = np.zeros((n, n), dtype=float)
-    for i, src in enumerate(node_ids):
-        lengths = nx.single_source_dijkstra_path_length(graph, src, weight="length")
-        for j, dst in enumerate(node_ids):
-            if i == j:
-                continue
-            mat[i, j] = lengths.get(dst, math.inf)
-
-    # If any node is unreachable from another, redraw — easier than
-    # patching infinities through the entire pipeline.
-    if not np.isfinite(mat).all():
-        # Retry once with a different sample; in practice this is rare
-        # for a well-connected urban graph.
-        return make_osm_instance(
-            graph, num_customers, capacity, params, rng,
-            city_name, demand_low, demand_high,
+        coords = np.array(
+            [[graph.nodes[nid]["y"], graph.nodes[nid]["x"]] for nid in node_ids]
         )
 
+        # Directed all-pairs shortest path on edge 'length' (metres)
+        mat = np.zeros((n, n), dtype=float)
+        for i, src in enumerate(node_ids):
+            lengths = nx.single_source_dijkstra_path_length(graph, src, weight="length")
+            for j, dst in enumerate(node_ids):
+                if i == j:
+                    continue
+                mat[i, j] = lengths.get(dst, math.inf)
+
+        if np.isfinite(mat).all():
+            demands = np.zeros(n, dtype=np.int64)
+            demands[1:] = rng.integers(demand_low, demand_high + 1, size=n - 1)
+            return _build_instance_from_distance(
+                coords, demands, mat, capacity, params, city_name,
+            )
+
+    # Fell through all retries: sanitise remaining infinities so the
+    # caller still gets a usable instance. This is rare for any
+    # reasonably-connected urban graph (e.g. Macau / Hong Kong).
+    import warnings
+    warnings.warn(
+        f"make_osm_instance: graph for {city_name!r} produced unreachable arcs "
+        f"in {max_retries} consecutive samples. Sanitising last attempt.",
+        RuntimeWarning,
+        stacklevel=2,
+    )
     demands = np.zeros(n, dtype=np.int64)
     demands[1:] = rng.integers(demand_low, demand_high + 1, size=n - 1)
-
     return _build_instance_from_distance(
         coords, demands, mat, capacity, params, city_name,
     )

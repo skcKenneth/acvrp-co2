@@ -161,14 +161,11 @@ class ACVRPPolicy(nn.Module):
         log_prob_sum = torch.zeros(B, device=device)
         actions = [current.clone()]
 
-        # Pre-compute a per-arc *raw* CO2 matrix in kg from the
-        # normalised edge feature channel. The instance.collate_instances
-        # routine normalises by max per instance, so to recover absolute
-        # kg we multiply by the maximum CO2-per-arc value observed in the
-        # source instance.
-        # Channel order in edge_features: [dist, time, fuel, co2] (see
-        # instance.EDGE_FEATURE_NAMES).
-        co2_per_arc_kg = self._reconstruct_co2_per_arc(batch)  # (B, N, N)
+        # Absolute per-arc CO2 in kg, as stored on the batch by
+        # collate_instances. This is the true emissions tensor; the
+        # normalised edge-feature channels are inputs to the encoder
+        # only and must NOT be used for reward accumulation.
+        co2_per_arc_kg = batch.co2_per_arc                 # (B, N, N) kg
 
         # Max horizon: each customer visit + up to (n-1) returns to
         # depot for refills. 2N is a safe upper bound.
@@ -189,10 +186,13 @@ class ACVRPPolicy(nn.Module):
             )
 
             if step == 0 and forced_first is not None:
+                # The first action under POMO is forced to a randomly-chosen
+                # customer; it is an *exploration* device, not a policy
+                # decision. Following Kwon et al. 2020 we exclude its
+                # gradient contribution by detaching its log-probability.
                 next_node = forced_first
-                # Log-prob of the forced action under the current policy
                 log_probs = torch.log_softmax(logits, dim=-1)
-                step_lp = log_probs.gather(1, next_node.unsqueeze(-1)).squeeze(-1)
+                step_lp = log_probs.gather(1, next_node.unsqueeze(-1)).squeeze(-1).detach()
             else:
                 if greedy:
                     next_node = logits.argmax(dim=-1)
@@ -217,12 +217,10 @@ class ACVRPPolicy(nn.Module):
             co2_acc = co2_acc + arc_co2
             log_prob_sum = log_prob_sum + step_lp
 
-            # Update state
-            served = next_node != batch.depot_index
-            visited = visited.scatter(
-                1, next_node.unsqueeze(-1), True
-            ) | visited  # (already-True stays True)
+            # Update state. scatter() already sets the bit; no OR needed.
+            visited = visited.scatter(1, next_node.unsqueeze(-1), True)
             # Subtract demand if we visited a customer; reset capacity at depot.
+            served = next_node != batch.depot_index
             picked_demand = batch.demands.gather(1, next_node.unsqueeze(-1)).squeeze(-1)
             remaining = torch.where(
                 served, remaining - picked_demand, batch.capacity.clone().long()
@@ -256,59 +254,6 @@ class ACVRPPolicy(nn.Module):
             distance_m=distance_acc,
             co2_kg=co2_acc,
         )
-
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _reconstruct_co2_per_arc(batch: BatchedInstances) -> torch.Tensor:
-        """
-        The edge-feature tensor stores CO2 normalised to [0, 1] per
-        instance (see instance.collate_instances). To accumulate the
-        *real* CO2 along the route we need the absolute per-arc kg.
-
-        We do not store the raw per-arc CO2 in BatchedInstances (would
-        double the memory), but we can recover it from the normalised
-        channel by multiplying by the maximum observed CO2 in the
-        instance, which equals the un-normalised CO2 at the longest
-        arc. That maximum is itself proportional to the distance
-        maximum (the emissions model is linear at zero payload), so we
-        can reconstruct it from the distance matrix.
-
-        Specifically the linear empty-payload emissions model gives
-            co2_ij  =  (C1*d_ij + C2*t_ij + C3*M0*d_ij) * rho
-                    =  alpha * d_ij + beta * t_ij,
-        where t_ij = d_ij / v. So co2_ij is itself linear in d_ij and
-        the max is at the longest arc. Concretely
-            co2_ij = (C1 + C3*M0 + C2/v) * rho * d_ij.
-
-        For consistency with the rest of the pipeline we read this
-        constant from the instance metadata via the `params` accessor
-        if available, and fall back to a hard-coded sensible default if
-        not. The default matches the config.yaml shipped with the
-        project.
-        """
-        # Read the normalised CO2 channel (index 3) and the raw distance.
-        co2_norm = batch.edge_features[..., 3]              # (B, N, N) in [0, 1]
-        # Recover absolute CO2 by reverting the normalisation: the max
-        # ratio of CO2 to distance is the same in normalised space (max
-        # of both channels is 1), so co2_abs / dist_abs == co2_norm /
-        # dist_norm. We solve for co2_abs from this.
-        dist_abs = batch.distance                            # (B, N, N) metres
-        dist_norm = batch.edge_features[..., 0]              # (B, N, N) in [0, 1]
-        # Avoid 0/0 on the diagonal and on numerically-equal rows.
-        ratio = torch.where(
-            dist_norm > 0,
-            co2_norm / dist_norm.clamp_min(1e-9),
-            torch.zeros_like(dist_norm),
-        )
-        # `ratio` should be approximately constant across all arcs of one
-        # instance (because both numerator and denominator scale by the
-        # same instance-specific normalisation factor); take the median
-        # to be robust to floating-point noise.
-        scale = ratio.flatten(1).median(dim=1).values         # (B,)
-        return dist_abs * scale.view(-1, 1, 1)               # (B, N, N) kg
 
     # ------------------------------------------------------------------
     # Public inference modes
@@ -353,6 +298,7 @@ class ACVRPPolicy(nn.Module):
             locations=tile(batch.locations),
             demands=tile(batch.demands),
             distance=tile(batch.distance),
+            co2_per_arc=tile(batch.co2_per_arc),
             edge_features=tile(batch.edge_features),
             capacity=tile(batch.capacity),
             depot_index=tile(batch.depot_index),

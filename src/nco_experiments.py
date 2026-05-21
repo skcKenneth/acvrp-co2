@@ -12,7 +12,7 @@ Typical usage
     python -m src.nco_experiments --mode train --config configs/nco_config.yaml
 
     # 2) Evaluate the trained model on OSM held-out instances
-    python -m src.nco_experiments --mode eval  --config configs/nco_config.yaml \
+    python -m src.nco_experiments --mode eval  --config configs/nco_config.yaml \\
             --checkpoint models/acvrp_policy_best.pt
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ from .nco.dataset import (
 )
 from .nco.inference import solve_with_policy
 from .nco.model import ACVRPPolicy
-from .nco.trainer import TrainingConfig, evaluate, train
+from .nco.trainer import TrainingConfig, evaluate, load_checkpoint, train
 from .solver_ortools import solve_cvrp
 
 
@@ -47,6 +47,12 @@ def load_config(path: str) -> dict:
 
 
 def build_policy(cfg: dict) -> ACVRPPolicy:
+    """
+    Build an ACVRPPolicy from a config-style dict. Used only for the
+    `train` mode where we instantiate the model from scratch. The
+    `eval` mode loads the architecture from the checkpoint via
+    `load_checkpoint` instead.
+    """
     m = cfg["model"]
     return ACVRPPolicy(
         node_feature_dim=3,
@@ -117,10 +123,10 @@ def run_evaluation(cfg: dict, checkpoint_path: str) -> None:
     params = emissions_params_from_config(cfg)
     device = cfg["training"]["device"]
 
-    policy = build_policy(cfg)
-    policy.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
-    policy.to(device)
-    policy.eval()
+    # Load via the unified loader so the architecture in the checkpoint
+    # is used (handles both the new self-describing format and the
+    # legacy bare-state_dict format).
+    policy = load_checkpoint(checkpoint_path, device=device)
 
     # Load each city in turn and evaluate the held-out OSM instance set.
     results = []

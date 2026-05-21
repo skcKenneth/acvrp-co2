@@ -192,9 +192,11 @@ class CoordOnlyACVRPPolicy(nn.Module):
         log_prob_sum = torch.zeros(B, device=device)
         actions = [current.clone()]
 
-        # Same CO2 reconstruction trick as ACVRPPolicy.
-        from .model import ACVRPPolicy as _AP
-        co2_per_arc_kg = _AP._reconstruct_co2_per_arc(batch)
+        # Read absolute CO2 directly from the batch (set by
+        # collate_instances). This was previously reconstructed by
+        # dividing two normalised channels, which collapsed to 1.0
+        # everywhere and silently turned the CO2 reward into distance.
+        co2_per_arc_kg = batch.co2_per_arc
 
         max_steps = 2 * N
         for step in range(max_steps):
@@ -211,10 +213,13 @@ class CoordOnlyACVRPPolicy(nn.Module):
             )
 
             if step == 0 and start_action is not None:
+                # POMO exploration: forced first action; detach its
+                # log-probability so the gradient does not flow through
+                # this non-policy choice (matches Kwon et al. 2020).
                 next_node = start_action
                 step_lp = torch.log_softmax(logits, dim=-1).gather(
                     1, next_node.unsqueeze(-1)
-                ).squeeze(-1)
+                ).squeeze(-1).detach()
             else:
                 if greedy:
                     next_node = logits.argmax(dim=-1)
@@ -238,8 +243,9 @@ class CoordOnlyACVRPPolicy(nn.Module):
             co2_acc = co2_acc + arc_co2
             log_prob_sum = log_prob_sum + step_lp
 
+            # Update state. scatter() already sets the bit; no OR needed.
+            visited = visited.scatter(1, next_node.unsqueeze(-1), True)
             served = next_node != batch.depot_index
-            visited = visited.scatter(1, next_node.unsqueeze(-1), True) | visited
             picked_demand = batch.demands.gather(1, next_node.unsqueeze(-1)).squeeze(-1)
             remaining = torch.where(
                 served, remaining - picked_demand, batch.capacity.clone().long()
@@ -289,6 +295,7 @@ class CoordOnlyACVRPPolicy(nn.Module):
             locations=tile(batch.locations),
             demands=tile(batch.demands),
             distance=tile(batch.distance),
+            co2_per_arc=tile(batch.co2_per_arc),
             edge_features=tile(batch.edge_features),
             capacity=tile(batch.capacity),
             depot_index=tile(batch.depot_index),

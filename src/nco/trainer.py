@@ -98,15 +98,77 @@ def save_checkpoint(
     )
 
 
+def _infer_legacy_arch(state: dict) -> dict:
+    """
+    Recover architecture hyperparameters from a bare state_dict.
+
+    Looks at parameter tensor shapes to infer embed_dim, n_layers,
+    ffn_dim, n_heads, and whether the encoder has edge-feature
+    projections (i.e. MatNet vs Vanilla-AM).
+
+    Raises RuntimeError if any required shape cannot be located.
+    """
+    embed_dim = None
+    n_layers = 0
+    ffn_dim = None
+    n_heads = None
+    has_edge_proj = False
+
+    for k, v in state.items():
+        # embed_dim: from the input projection (node_proj for MatNet,
+        # input_proj for Vanilla-AM).
+        if k.endswith("node_proj.weight") or k.endswith("input_proj.weight"):
+            embed_dim = v.shape[0]
+        # n_layers: highest block index encountered.
+        if k.startswith("encoder.blocks.") and ".attn.W_q.weight" in k:
+            block_idx = int(k.split(".")[2])
+            n_layers = max(n_layers, block_idx + 1)
+        # ffn_dim: from the first FFN linear's output dimension.
+        # PyTorch stores nn.Linear weights as (out_features, in_features),
+        # so blocks[0].ffn.0.weight has shape (ffn_dim, embed_dim).
+        if k.endswith("blocks.0.ffn.0.weight"):
+            ffn_dim = v.shape[0]
+        # MatNet has an edge-feature projection W_e in EdgeAwareAttention;
+        # Vanilla-AM uses nn.MultiheadAttention (no W_e key).
+        if "W_e" in k or "edge_proj" in k:
+            has_edge_proj = True
+
+    if embed_dim is None or n_layers == 0:
+        raise RuntimeError(
+            "Could not infer architecture from legacy checkpoint: "
+            "missing input projection or transformer blocks."
+        )
+
+    # n_heads cannot be uniquely recovered from weight shapes alone
+    # (W_q.weight is (embed_dim, embed_dim) regardless of head count),
+    # so we fall back to the project-wide convention. All YAML configs
+    # in this project use n_heads=8.
+    if n_heads is None:
+        n_heads = 8
+
+    if ffn_dim is None:
+        # Fallback if the FFN naming changed; keep the project's
+        # historical convention but flag it.
+        ffn_dim = 2 * embed_dim
+
+    return {
+        "embed_dim": embed_dim,
+        "n_layers": n_layers,
+        "ffn_dim": ffn_dim,
+        "n_heads": n_heads,
+        "_has_edge_proj": has_edge_proj,
+    }
+
+
 def load_checkpoint(path: str, device: str = "cpu") -> torch.nn.Module:
     """
     Load a checkpoint saved by `save_checkpoint` and return the
     correctly-constructed policy with weights already loaded.
 
     Backwards-compatible: if the file is a raw state_dict (the old
-    format used before this change), we attempt to load it into the
-    default ACVRPPolicy architecture and surface a clear error message
-    if the shapes don't match.
+    format used before this change), we attempt to infer the
+    architecture from the parameter shapes and emit a warning so the
+    user knows they should retrain.
     """
     from .model import ACVRPPolicy
     from .baseline_am import CoordOnlyACVRPPolicy
@@ -125,39 +187,31 @@ def load_checkpoint(path: str, device: str = "cpu") -> torch.nn.Module:
         policy.to(device).eval()
         return policy
 
-    # Legacy format: bare state_dict. Try to infer architecture from the
-    # parameter shapes.
-    state = blob if isinstance(blob, dict) and "state_dict" not in blob else blob.get("state_dict", blob)
+    # Legacy format: bare state_dict. Infer architecture from shapes.
+    state = (
+        blob
+        if isinstance(blob, dict) and "state_dict" not in blob
+        else blob.get("state_dict", blob)
+    )
 
-    # Infer embed_dim and n_layers from the keys.
-    embed_dim = None
-    n_layers = 0
-    has_edge_proj = False
-    for k, v in state.items():
-        if k.endswith("node_proj.weight") or k.endswith("input_proj.weight"):
-            embed_dim = v.shape[0]
-        if k.startswith("encoder.blocks.") and ".attn.W_q.weight" in k:
-            block_idx = int(k.split(".")[2])
-            n_layers = max(n_layers, block_idx + 1)
-        if "W_e" in k or "edge_proj" in k:
-            has_edge_proj = True
+    import warnings
+    warnings.warn(
+        f"Loading legacy bare-state_dict checkpoint at {path!r}. "
+        "Inferring architecture from parameter shapes; consider retraining "
+        "to produce a v2 self-describing checkpoint.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
-    if embed_dim is None or n_layers == 0:
-        raise RuntimeError(
-            f"Could not infer architecture from legacy checkpoint at {path}. "
-            "Re-save it with the new save_checkpoint() helper."
-        )
+    inferred = _infer_legacy_arch(state)
+    has_edge_proj = inferred.pop("_has_edge_proj")
 
-    arch = {
-        "embed_dim": embed_dim,
-        "n_layers": n_layers,
-        "ffn_dim": 2 * embed_dim,    # Convention used in this project
-    }
     if has_edge_proj:
-        policy = ACVRPPolicy(**arch)
+        policy = ACVRPPolicy(**inferred)
     else:
         # Coord-only baseline has no edge attention
-        policy = CoordOnlyACVRPPolicy(**arch)
+        policy = CoordOnlyACVRPPolicy(**inferred)
+
     policy.load_state_dict(state)
     policy.to(device).eval()
     return policy

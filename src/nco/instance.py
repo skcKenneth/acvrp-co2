@@ -57,8 +57,9 @@ class BatchedInstances:
 
     locations: "torch.Tensor"      # (B, N, 2)
     demands: "torch.Tensor"        # (B, N)         int
-    distance: "torch.Tensor"       # (B, N, N)      float
-    edge_features: "torch.Tensor"  # (B, N, N, F)   float; F = 4 below
+    distance: "torch.Tensor"       # (B, N, N)      float -- absolute metres
+    co2_per_arc: "torch.Tensor"    # (B, N, N)      float -- ABSOLUTE kg CO2 at empty payload
+    edge_features: "torch.Tensor"  # (B, N, N, F)   float; F = 4 below (NORMALISED for model input)
     capacity: "torch.Tensor"       # (B,)           int
     depot_index: "torch.Tensor"    # (B,)           int
 
@@ -75,6 +76,7 @@ class BatchedInstances:
             locations=self.locations.to(device),
             demands=self.demands.to(device),
             distance=self.distance.to(device),
+            co2_per_arc=self.co2_per_arc.to(device),
             edge_features=self.edge_features.to(device),
             capacity=self.capacity.to(device),
             depot_index=self.depot_index.to(device),
@@ -130,6 +132,15 @@ def collate_instances(instances: Sequence[CVRPInstance]) -> BatchedInstances:
         np.stack([inst.distance for inst in instances]), dtype=torch.float32
     )
 
+    # Also stack the ABSOLUTE per-arc CO2 (kg) so that rollouts can
+    # accumulate true emissions without going through the lossy
+    # max-normalised edge-feature channel. This is what the model's
+    # `_reconstruct_co2_per_arc` previously tried (and failed) to
+    # recover via division of two normalised channels.
+    co2_abs = torch.tensor(
+        np.stack([inst.co2_per_arc for inst in instances]), dtype=torch.float32
+    )
+
     # --- Build (B, N, N, F) edge-feature tensor -------------------------
     feats = []
     for inst in instances:
@@ -158,6 +169,7 @@ def collate_instances(instances: Sequence[CVRPInstance]) -> BatchedInstances:
         locations=locs,
         demands=dem,
         distance=dist,
+        co2_per_arc=co2_abs,
         edge_features=edge_feats,
         capacity=caps,
         depot_index=depots,
