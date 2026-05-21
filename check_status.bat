@@ -34,8 +34,18 @@ powershell -Command "Get-Content 'logs\!LATEST!' -Tail 30"
 
 echo.
 echo === Checkpoint files present ===
-if exist models\matnet_cvrp_best.pt (echo   [OK] models\matnet_cvrp_best.pt) else (echo   [missing] models\matnet_cvrp_best.pt)
-if exist models\baseline_am_best.pt  (echo   [OK] models\baseline_am_best.pt) else (echo   [missing] models\baseline_am_best.pt)
+REM Check both old (no suffix) and new (n20/n50) naming conventions
+set FOUND_MATNET=0
+if exist models\matnet_cvrp_n20_best.pt (echo   [OK]      models\matnet_cvrp_n20_best.pt & set FOUND_MATNET=1)
+if exist models\matnet_cvrp_n50_best.pt (echo   [OK]      models\matnet_cvrp_n50_best.pt & set FOUND_MATNET=1)
+if exist models\matnet_cvrp_best.pt     (echo   [legacy]  models\matnet_cvrp_best.pt     ^(rename to add _n20 or _n50 suffix^) & set FOUND_MATNET=1)
+if "!FOUND_MATNET!"=="0" echo   [missing] no matnet_cvrp_*_best.pt found
+
+set FOUND_BASE=0
+if exist models\baseline_am_n20_best.pt (echo   [OK]      models\baseline_am_n20_best.pt & set FOUND_BASE=1)
+if exist models\baseline_am_n50_best.pt (echo   [OK]      models\baseline_am_n50_best.pt & set FOUND_BASE=1)
+if exist models\baseline_am_best.pt     (echo   [legacy]  models\baseline_am_best.pt     ^(rename to add _n20 or _n50 suffix^) & set FOUND_BASE=1)
+if "!FOUND_BASE!"=="0" echo   [missing] no baseline_am_*_best.pt found
 
 echo.
 echo === Macau results ===

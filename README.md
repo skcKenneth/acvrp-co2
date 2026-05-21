@@ -129,19 +129,46 @@ Writes `results/summary.csv`, `results/comparison.png`,
 
 ### Stage 2 — Train the neural policies
 
+The default setup trains at **N=20** customers. This matches the
+standard problem size used in the AM (Kool 2019) and POMO (Kwon 2020)
+papers, converges quickly, and is what produces the *main* results
+reported in the paper.
+
 ```bash
-# Smoke test (~10 min, verifies the pipeline)
+# Smoke test (~5 min, verifies the pipeline)
 python -m src.nco_experiments --mode train --config configs/nco_config_smoke.yaml
 
-# Full training of MatNet-CVRP (~6 h on RTX 3090 / 4090)
+# MAIN: MatNet-CVRP at N=20 (~60-90 min on RTX 5070)
 python -m src.train_nco --policy matnet --config configs/train.yaml --osm-eval
 
-# Train the coord-only baseline AM for the comparison (~4 h)
+# MAIN: Vanilla-AM baseline at N=20 (~60-80 min)
 python -m src.train_nco --policy baseline --config configs/train.yaml --osm-eval
 ```
 
-Best checkpoints are saved to `models/matnet_cvrp_best.pt` and
-`models/baseline_am_best.pt`.
+Main checkpoints land in:
+- `models/matnet_cvrp_n20_best.pt`
+- `models/baseline_am_n20_best.pt`
+
+#### Optional scalability ablation (N=50)
+
+For Section 5.2 of the paper (scalability evidence), the same two
+architectures can be trained on the larger N=50 problem. This is
+**not** required to reproduce the headline result, only to corroborate
+that the approach scales.
+
+```bash
+# OPTIONAL: MatNet-CVRP at N=50 (~3-5 hours)
+python -m src.train_nco --policy matnet --config configs/train_n50.yaml --osm-eval
+
+# OPTIONAL: Vanilla-AM at N=50 (~3-4 hours)
+python -m src.train_nco --policy baseline --config configs/train_n50.yaml --osm-eval
+```
+
+These write to separate filenames:
+- `models/matnet_cvrp_n50_best.pt`
+- `models/baseline_am_n50_best.pt`
+
+so the N=20 and N=50 runs never overwrite each other.
 
 ### Stage 3 — Cross-city evaluation (NCO only)
 
@@ -163,24 +190,35 @@ OR-Tools, GA, Vanilla-AM, and MatNet-CVRP each run on the SE / SM / SR
 the AR ground truth.
 
 ```bash
-python -m src.experiments_full \
-    --config config.yaml \
-    --matnet-checkpoint models/matnet_cvrp_best.pt \
-    --baseline-checkpoint models/baseline_am_best.pt
+# Macau (primary city)
+python -m src.experiments_full --config config.yaml ^
+    --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
+    --baseline-checkpoint models\baseline_am_n20_best.pt
+
+# Hong Kong (secondary city)
+python -m src.experiments_full --config config_hongkong.yaml ^
+    --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
+    --baseline-checkpoint models\baseline_am_n20_best.pt
 ```
 
-Writes `results/summary_full.csv` and `results/penalties_full.json`.
+Writes `results_<city>/summary_full.csv` and
+`results_<city>/penalties_full.json`.
 
 ---
 
 ## Estimated compute budgets
 
+Wall-clock times below are measured on an RTX 5070 (12 GB). Mid-range
+GPUs (RTX 4070, 3080) will be within ~30% of these numbers.
+
 | Pipeline | Hardware | Wall-clock |
 |---|---|---|
-| Classical (Stage 1) | CPU, 8 cores | ~10 min |
-| NCO smoke test | RTX 3090 | ~10 min |
-| NCO full training | RTX 3090 / 4090 | ~6 h |
-| Cross-city eval | RTX 3090 + CPU | ~30 min |
+| Classical (Stage 1, per city) | CPU, 8 cores | ~5 min |
+| NCO smoke test | RTX 5070 | ~5 min |
+| MatNet-CVRP training (N=20) | RTX 5070 | ~60-90 min |
+| Vanilla-AM training (N=20) | RTX 5070 | ~60-80 min |
+| Grid comparison (per city) | RTX 5070 + CPU | ~10 min |
+| **Full pipeline (both cities)** | **RTX 5070** | **~3-4 hours** |
 
 ---
 

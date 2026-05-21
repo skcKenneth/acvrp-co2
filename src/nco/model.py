@@ -69,6 +69,17 @@ class ACVRPPolicy(nn.Module):
             raise ValueError(
                 f"cost_mode must be 'distance', 'co2', or 'blend'; got {cost_mode!r}."
             )
+        # Store all constructor args as attributes so that save_checkpoint
+        # in trainer.py can recover them and rebuild the same architecture
+        # at load time. This avoids the silent size-mismatch failure that
+        # occurs when defaults change between training and inference.
+        self.node_feature_dim = node_feature_dim
+        self.edge_feature_dim = edge_feature_dim
+        self.embed_dim = embed_dim
+        self.n_heads = n_heads
+        self.n_layers = n_layers
+        self.ffn_dim = ffn_dim
+        self.tanh_clip = tanh_clip
         self.cost_mode = cost_mode
         self.co2_weight = float(co2_weight)
         self.co2_scale = float(co2_scale)

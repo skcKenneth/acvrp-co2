@@ -14,7 +14,7 @@ For each weight w in {0.0, 0.25, 0.50, 0.75, 1.0}:
 
 Usage
 -----
-    python -m src.sweep_pareto --config configs/train_n50.yaml
+    python -m src.sweep_pareto --config configs/train.yaml
 
 Total wall-clock on an RTX 5070 Ti: roughly 5 * (single-model time) = 15-25 h.
 You may want to break this into chunks: run 1-2 weights overnight at a time.
@@ -37,7 +37,7 @@ CO2_WEIGHTS = [0.0, 0.25, 0.50, 0.75, 1.0]
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pareto-front sweep over CO2 weights.")
-    parser.add_argument("--config", default="configs/train_n50.yaml")
+    parser.add_argument("--config", default="configs/train.yaml")
     parser.add_argument(
         "--weights", nargs="+", type=float, default=CO2_WEIGHTS,
         help=(

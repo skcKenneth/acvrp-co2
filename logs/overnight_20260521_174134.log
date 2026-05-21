@@ -1,0 +1,46 @@
+ 
+============================================================ 
+ACVRP-CO2 overnight pipeline (Macau + Hong Kong) 
+Started: 2026/05/21 ¶g¥| 17:41:34.84 
+Working dir: D:\GitHub Project\acvrp-co2 
+Log file:    logs\overnight_20260521_174134.log 
+============================================================ 
+ 
+[17:41:34.84] Step 0: Environment sanity check... 
+All imports OK
+Torch: 2.9.1+cu130
+CUDA available: True
+GPU: NVIDIA GeForce RTX 5070
+ 
+[17:41:39.75] Step 1: Classical experiment (Macau)... 
+C:\Users\User\miniconda3\Lib\site-packages\matplotlib\transforms.py:2437: RuntimeWarning: invalid value encountered in dot
+  return Affine2D(np.dot(self._b.get_affine().get_matrix(),
+Graph: 1853 nodes, 3229 edges
+Customers: 20 (+1 depot)
+AR asymmetry index: 0.0787
+
+--- Solving variant SE (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SM (ortools) ---
+  Found 3 routes.
+
+--- Solving variant SR (ortools) ---
+  Found 3 routes.
+
+--- Solving variant AR (ortools) ---
+  Found 3 routes.
+
+========== RESULTS ==========
+Variant    Distance (km)    Fuel (L)    CO2 (kg)
+SE                 26.58         inf         inf
+SM                 25.89         inf         inf
+SR                 26.08         inf         inf
+AR                 21.92         inf         inf
+
+Asymmetry penalties (vs. AR baseline):
+  SE: distance +21.25%, CO2 +nan%
+  SM: distance +18.12%, CO2 +nan%
+  SR: distance +19.01%, CO2 +nan%
+
+Outputs written to: D:\GitHub Project\acvrp-co2\results_macau

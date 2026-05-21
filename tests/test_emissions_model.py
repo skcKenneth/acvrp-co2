@@ -79,6 +79,18 @@ def test_route_fuel_with_simple_path(params):
     )
 
 
+def test_routes_to_metrics_infeasible_on_ar(params):
+    from src.emissions_model import routes_to_metrics
+
+    D = np.array([[0, 1000], [math.inf, 0]], dtype=float)
+    demands = [0, 5]
+    metrics = routes_to_metrics([[0, 1, 0]], D, demands, params)
+    assert metrics["infeasible_legs"] == 1
+    assert metrics["ar_feasible"] is False
+    assert math.isnan(metrics["co2_kg"])
+    assert metrics["distance_m"] == pytest.approx(1000.0)
+
+
 def test_unreachable_arc_returns_inf(params):
     """If a route requires an infinite-cost arc, fuel should be inf."""
     D = np.array([[0, math.inf], [math.inf, 0]], dtype=float)

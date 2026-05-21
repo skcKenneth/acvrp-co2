@@ -187,6 +187,36 @@ def osm_dataset(
 # Helper: derive edge features from a distance matrix
 # ---------------------------------------------------------------------------
 
+def sanitize_distance_matrix(
+    dist: np.ndarray,
+    *,
+    penalty: float | None = None,
+) -> np.ndarray:
+    """
+    Replace non-finite off-diagonal entries with a large finite penalty.
+
+    OSM road matrices can contain ``inf`` for unreachable directed arcs.
+    Classical solvers treat those arcs as prohibitively expensive; the NCO
+    pipeline needs finite values so edge-feature normalisation and CUDA
+    sampling remain well-defined.
+    """
+    out = np.asarray(dist, dtype=np.float64, order="C").copy()
+    n = out.shape[0]
+    off_diag = ~np.eye(n, dtype=bool)
+    bad = off_diag & ~np.isfinite(out)
+    if not bad.any():
+        return out.astype(np.float32)
+
+    finite_off = off_diag & np.isfinite(out)
+    if penalty is None:
+        if finite_off.any():
+            penalty = float(np.max(out[finite_off]) * 10.0)
+        else:
+            penalty = 1e7
+    out[bad] = penalty
+    return out.astype(np.float32)
+
+
 def _build_instance_from_distance(
     coords: np.ndarray,
     demands: np.ndarray,
@@ -205,6 +235,7 @@ def _build_instance_from_distance(
     not knowable at the encoder stage. The decoder reasons about
     payload implicitly through its capacity state.
     """
+    dist = sanitize_distance_matrix(dist)
     speed = params.avg_speed_mps
     time = dist / max(speed, 1e-9)
 

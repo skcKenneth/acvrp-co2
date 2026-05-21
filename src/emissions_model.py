@@ -119,16 +119,30 @@ def fuel_to_co2_kg(litres: float, params: EmissionsParams) -> float:
     return litres * params.co2_per_litre
 
 
+def count_infeasible_legs(
+    routes: List[List[int]],
+    distance_matrix: np.ndarray,
+) -> int:
+    """Count route legs whose distance is non-finite on ``distance_matrix``."""
+    count = 0
+    for route in routes:
+        for k in range(len(route) - 1):
+            if not np.isfinite(float(distance_matrix[route[k], route[k + 1]])):
+                count += 1
+    return count
+
+
 def routes_to_metrics(
     routes: List[List[int]],
     distance_matrix: np.ndarray,
     demands: Sequence[int],
     params: EmissionsParams,
-) -> dict[str, float]:
+) -> dict[str, float | int | bool]:
     """
     Aggregate fuel, distance, and CO2 across a *set* of routes (one
     route per vehicle).
     """
+    infeasible_legs = count_infeasible_legs(routes, distance_matrix)
     total_distance = 0.0
     total_fuel = 0.0
     for route in routes:
@@ -137,8 +151,17 @@ def routes_to_metrics(
             if np.isfinite(d):
                 total_distance += d
         total_fuel += route_fuel_litres(route, distance_matrix, demands, params)
+
+    ar_feasible = infeasible_legs == 0 and np.isfinite(total_fuel)
+    co2_kg = (
+        fuel_to_co2_kg(total_fuel, params)
+        if ar_feasible
+        else float("nan")
+    )
     return {
         "distance_m": total_distance,
-        "fuel_l": total_fuel,
-        "co2_kg": fuel_to_co2_kg(total_fuel, params),
+        "fuel_l": total_fuel if ar_feasible else float("nan"),
+        "co2_kg": co2_kg,
+        "infeasible_legs": infeasible_legs,
+        "ar_feasible": ar_feasible,
     }

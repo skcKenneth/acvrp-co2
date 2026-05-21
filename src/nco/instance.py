@@ -91,6 +91,16 @@ EDGE_FEATURE_NAMES: List[str] = [
 ]
 
 
+def _safe_channel_norm(x: np.ndarray, eps: float = 1e-9) -> np.ndarray:
+    """Per-instance max-normalisation using only finite values."""
+    finite = np.isfinite(x)
+    out = np.zeros_like(x, dtype=np.float64)
+    if finite.any():
+        scale = float(np.max(x[finite])) + eps
+        out[finite] = x[finite] / scale
+    return out.astype(np.float32)
+
+
 def collate_instances(instances: Sequence[CVRPInstance]) -> BatchedInstances:
     """
     Pad-stack a sequence of instances into a single batch.
@@ -128,14 +138,11 @@ def collate_instances(instances: Sequence[CVRPInstance]) -> BatchedInstances:
         f = inst.fuel_per_arc
         c = inst.co2_per_arc
 
-        # Per-instance min-max normalisation so that scales are
-        # comparable across cities. We add a small epsilon to avoid
-        # division by zero on degenerate instances.
-        eps = 1e-9
-        d_n = d / (d.max() + eps)
-        t_n = t / (t.max() + eps)
-        f_n = f / (f.max() + eps)
-        c_n = c / (c.max() + eps)
+        # Per-instance max-normalisation (finite values only).
+        d_n = _safe_channel_norm(d)
+        t_n = _safe_channel_norm(t)
+        f_n = _safe_channel_norm(f)
+        c_n = _safe_channel_norm(c)
 
         feats.append(np.stack([d_n, t_n, f_n, c_n], axis=-1))
     edge_feats = torch.tensor(np.stack(feats), dtype=torch.float32)

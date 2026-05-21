@@ -31,11 +31,13 @@ class EvaluatedSolution:
 
     variant: str           # SE, SM, SR, AR
     routes: List[List[int]]
-    distance_m: float      # Re-evaluated on AR
+    distance_m: float      # Re-evaluated on AR (finite legs only)
     fuel_l: float
     co2_kg: float
+    ar_feasible: bool = True
+    infeasible_legs: int = 0
 
-    def as_row(self) -> Dict[str, float | str]:
+    def as_row(self) -> Dict[str, float | str | bool | int]:
         return asdict(self)
 
 
@@ -54,9 +56,11 @@ def reevaluate_on_ground_truth(
     return EvaluatedSolution(
         variant=variant,
         routes=routes,
-        distance_m=metrics["distance_m"],
-        fuel_l=metrics["fuel_l"],
-        co2_kg=metrics["co2_kg"],
+        distance_m=float(metrics["distance_m"]),
+        fuel_l=float(metrics["fuel_l"]),
+        co2_kg=float(metrics["co2_kg"]),
+        ar_feasible=bool(metrics["ar_feasible"]),
+        infeasible_legs=int(metrics["infeasible_legs"]),
     )
 
 
@@ -75,18 +79,19 @@ def compute_penalties(
         raise KeyError(f"Baseline variant {baseline!r} not in evaluations.")
 
     ref = evaluations[baseline]
+    if not ref.ar_feasible or ref.distance_m <= 0:
+        return {}
+
     penalties: Dict[str, Dict[str, float]] = {}
     for code, ev in evaluations.items():
         if code == baseline:
             continue
-        def _pct(delta: float, base: float) -> float | None:
-            if not np.isfinite(base) or base == 0.0 or not np.isfinite(delta):
-                return None
-            return 100.0 * delta / base
-
-        penalties[code] = {
-            "distance_pct": _pct(ev.distance_m - ref.distance_m, ref.distance_m),
-            "co2_pct": _pct(ev.co2_kg - ref.co2_kg, ref.co2_kg),
-            "fuel_pct": _pct(ev.fuel_l - ref.fuel_l, ref.fuel_l),
+        entry: Dict[str, float] = {
+            "distance_pct": 100.0 * (ev.distance_m - ref.distance_m) / ref.distance_m,
         }
+        if ev.ar_feasible and ref.ar_feasible and np.isfinite(ev.co2_kg) and np.isfinite(ref.co2_kg) and ref.co2_kg > 0:
+            entry["co2_pct"] = 100.0 * (ev.co2_kg - ref.co2_kg) / ref.co2_kg
+        if ev.ar_feasible and ref.ar_feasible and np.isfinite(ev.fuel_l) and np.isfinite(ref.fuel_l) and ref.fuel_l > 0:
+            entry["fuel_pct"] = 100.0 * (ev.fuel_l - ref.fuel_l) / ref.fuel_l
+        penalties[code] = entry
     return penalties

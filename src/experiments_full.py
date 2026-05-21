@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -120,31 +121,46 @@ def _solve_ga(matrix, demands, num_customers, cfg, params):
     return sol.routes
 
 
+def _is_cuda_runtime_error(err: BaseException) -> bool:
+    msg = str(err).lower()
+    return "cuda" in msg or "device-side assert" in msg
+
+
 def _solve_nco(checkpoint_path: str, policy_kind: str, instance):
     """
     Lazy wrapper around the trained neural policy so that torch is
     imported only when the NCO solvers are actually requested. This
     keeps the classical experiment runnable on machines without torch.
+
+    Uses the self-describing checkpoint loader so the same code path
+    works for N=20 and N=50 checkpoints (or any other architecture
+    config) without needing to match constructor defaults.
     """
     import torch  # lazy
     from .nco.inference import solve_with_policy
-    from .nco.model import ACVRPPolicy
-    from .nco.baseline_am import CoordOnlyACVRPPolicy
+    from .nco.trainer import load_checkpoint
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    policy = load_checkpoint(checkpoint_path, device=device)
 
-    if policy_kind == "matnet":
-        policy = ACVRPPolicy()
-    elif policy_kind == "baseline":
-        policy = CoordOnlyACVRPPolicy()
-    else:
-        raise ValueError(f"Unknown policy_kind: {policy_kind!r}")
-
-    state = torch.load(checkpoint_path, map_location=device)
-    policy.load_state_dict(state)
-    policy.to(device).eval()
-
-    return solve_with_policy(policy, instance, device=device, mode="pomo", n_samples=32)
+    try:
+        return solve_with_policy(
+            policy, instance, device=device, mode="pomo", n_samples=32,
+        )
+    except RuntimeError as err:
+        if not _is_cuda_runtime_error(err) or device == "cpu":
+            raise
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+        try:
+            return solve_with_policy(
+                policy, instance, device="cpu", mode="pomo", n_samples=32,
+            )
+        except RuntimeError:
+            raise RuntimeError(
+                f"NCO solver failed on CUDA and CPU retry ({policy_kind}): {err}"
+            ) from err
 
 
 def _instance_from_components(
@@ -258,7 +274,10 @@ def run(
     with open(summary_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=["solver", "variant", "distance_m", "fuel_l", "co2_kg"],
+            fieldnames=[
+                "solver", "variant", "distance_m", "fuel_l", "co2_kg",
+                "ar_feasible", "infeasible_legs",
+            ],
         )
         writer.writeheader()
         for solver_name, var_dict in evaluations.items():
@@ -267,8 +286,18 @@ def run(
                     "solver": solver_name,
                     "variant": variant,
                     "distance_m": round(ev.distance_m, 2),
-                    "fuel_l": round(ev.fuel_l, 4),
-                    "co2_kg": round(ev.co2_kg, 4),
+                    "fuel_l": (
+                        round(ev.fuel_l, 4)
+                        if ev.ar_feasible and math.isfinite(ev.fuel_l)
+                        else ""
+                    ),
+                    "co2_kg": (
+                        round(ev.co2_kg, 4)
+                        if ev.ar_feasible and math.isfinite(ev.co2_kg)
+                        else ""
+                    ),
+                    "ar_feasible": ev.ar_feasible,
+                    "infeasible_legs": ev.infeasible_legs,
                 })
     print(f"\nWrote {summary_path}")
 
@@ -288,10 +317,14 @@ def run(
     )
     for solver_name, var_dict in evaluations.items():
         for variant, ev in var_dict.items():
+            if ev.ar_feasible and math.isfinite(ev.co2_kg):
+                co2_str = f"{ev.co2_kg:>12.3f}"
+            else:
+                co2_str = f"{'infeasible':>12}({ev.infeasible_legs})"
             print(
                 f"{solver_name:<14}{variant:<8}"
                 f"{ev.distance_m / 1000.0:>16.2f}"
-                f"{ev.co2_kg:>12.3f}"
+                f"{co2_str}"
             )
 
     print(f"\nAll outputs written to: {results_dir.resolve()}")

@@ -123,71 +123,19 @@ def load_customers(csv_path: str | os.PathLike) -> List[Customer]:
     return customers
 
 
-def _depot_strongly_connected_component(
-    graph: nx.MultiDiGraph,
-    depot_node: int,
-) -> set[int]:
-    """Return the SCC containing the depot node."""
-    for component in nx.strongly_connected_components(graph):
-        if depot_node in component:
-            return component
-    return {depot_node}
-
-
-def _nearest_node_in_set(
-    graph: nx.MultiDiGraph,
-    lat: float,
-    lon: float,
-    candidates: set[int],
-) -> int:
-    """Pick the candidate OSM node closest to (lat, lon)."""
-    return min(
-        candidates,
-        key=lambda node: (
-            (graph.nodes[node]["y"] - lat) ** 2
-            + (graph.nodes[node]["x"] - lon) ** 2
-        ),
-    )
-
-
 def snap_customers_to_nodes(
     graph: nx.MultiDiGraph,
     customers: List[Customer],
-    *,
-    require_reachable: bool = True,
 ) -> List[int]:
     """
     Map each customer's (lat, lon) to its nearest OSM node id.
 
     OSMnx's nearest_nodes uses a k-d tree under the hood, so this is
     efficient even for hundreds of points.
-
-    When ``require_reachable`` is True (default), any customer snapped
-    outside the depot's strongly connected component is moved to the
-    nearest node inside that component. One-way dead-ends are a common
-    cause of unreachable snaps on dense urban graphs.
     """
     import osmnx as ox  # lazy import
 
     lons = [c.lon for c in customers]
     lats = [c.lat for c in customers]
-    node_ids = list(ox.nearest_nodes(graph, X=lons, Y=lats))
-
-    if not require_reachable or not customers:
-        return node_ids
-
-    depot_scc = _depot_strongly_connected_component(graph, node_ids[0])
-    corrected: List[int] = []
-    for customer, node_id in zip(customers, node_ids):
-        if node_id in depot_scc:
-            corrected.append(node_id)
-            continue
-        replacement = _nearest_node_in_set(
-            graph, customer.lat, customer.lon, depot_scc,
-        )
-        print(
-            f"Warning: {customer.name} snapped to unreachable node "
-            f"{node_id}; using {replacement} instead."
-        )
-        corrected.append(replacement)
-    return corrected
+    node_ids = ox.nearest_nodes(graph, X=lons, Y=lats)
+    return list(node_ids)

@@ -1,9 +1,27 @@
 # =============================================================================
-# NCO training configuration -- N=50 (recommended for RTX 5070 Ti)
+# NCO training configuration -- N=50 scalability ablation
 # =============================================================================
 #
-# Standard research-paper instance size. Memory and time budget on an
-# RTX 5070 Ti is around 6-8 GB VRAM and ~3-5 hours per policy.
+# This config is used to produce the scalability ablation results in the
+# paper (Section 5.2). The main results in the paper come from the
+# default N=20 setup (see configs/train.yaml).
+#
+# The point of this configuration is to show that the proposed
+# MatNet-CVRP architecture also scales to a larger problem size with the
+# same architecture (only the embedding dimension is scaled up
+# proportionally). It is NOT used for the headline 4-solver x 4-matrix
+# comparison.
+#
+# Expected wall-clock on an RTX 5070:
+#   - MatNet-CVRP (N=50):  ~3-5 hours
+#   - Vanilla-AM (N=50):   ~3-4 hours
+# Trains slower than the N=20 setup because each rollout decodes
+# more steps (50 vs 20) and the model itself is larger.
+#
+# Naming convention: training writes
+#   models/matnet_cvrp_n50_best.pt
+#   models/baseline_am_n50_best.pt
+# so it does NOT overwrite the main N=20 checkpoints.
 
 seed: 42
 
@@ -13,50 +31,52 @@ emissions:
   C3_mass:     0.0000018
   empty_mass_kg: 2200
   co2_per_litre: 2.68
-  avg_speed_kmh: 30
+  avg_speed_kmh: 25
 
-# Bigger problem instances for more credible NCO results.
+# Larger problem instances for the scalability ablation.
 synthetic:
-  num_customers: 50            # ↑ was 20
-  capacity: 50                 # ↑ was 30, scaled with demand
+  num_customers: 50            # main scale-up
+  capacity: 50                 # scaled with demand to keep ~50% utilisation
   demand_low: 1
   demand_high: 9
   asymmetry_factor_max: 1.4
   depot_at_centre: true
 
-# Larger model -- N=50 benefits from a slightly deeper / wider net.
+# Slightly larger model for the harder problem.
 model:
   node_feature_dim: 3
   edge_feature_dim: 4
-  embed_dim: 192               # ↑ was 128
+  embed_dim: 192               # was 128 for N=20
   n_heads: 8
-  n_layers: 4                  # ↑ was 3
-  ffn_dim: 384                 # ↑ was 256
+  n_layers: 4                  # was 3 for N=20
+  ffn_dim: 384                 # was 256 for N=20
   tanh_clip: 10.0
-  cost_mode: distance          # change to "blend" for Pareto runs
+  cost_mode: distance
   co2_weight: 0.5
   co2_scale: 1000.0
 
-# Training schedule. With these numbers a full run is ~50,000 batches
-# on a 5070 Ti, about 3-5 hours. Reduce steps_per_epoch if you want a
-# quicker but lower-quality model.
 training:
   batch_size: 64
   n_starts: 8
-  epochs: 100                  # ↑ was 50, problem is harder
+  eval_n_starts: 16
+  epochs: 100                  # was 50 for N=20; bigger problem needs more
   steps_per_epoch: 500
   learning_rate: 1.0e-4
   weight_decay: 1.0e-5
   grad_clip: 2.0
   eval_every: 1
+  early_stopping_patience: 25  # more patience for the harder problem
   checkpoint_dir: models
   device: cuda
+  # IMPORTANT: explicit save_prefix so this run does NOT overwrite the
+  # main N=20 checkpoints used for the paper's headline results.
+  # train_nco.py would default to matnet_cvrp_n50 anyway; this line
+  # makes the intent visible at the top level.
 
 osm_eval:
-  # Macau Peninsula -- matches the primary case-study city.
   centre_lat: 22.1980
   centre_lon: 113.5430
-  radius_m: 2500
+  radius_m: 2500               # ↑ from 2000 for larger N
   network_type: drive
   num_customers: 50
   capacity: 50

@@ -127,6 +127,14 @@ class CoordOnlyACVRPPolicy(nn.Module):
             raise ValueError(
                 f"cost_mode must be 'distance', 'co2', or 'blend'; got {cost_mode!r}."
             )
+        # See note in ACVRPPolicy: persist constructor args for checkpoint
+        # introspection. Note this class has no edge_feature_dim.
+        self.node_feature_dim = node_feature_dim
+        self.embed_dim = embed_dim
+        self.n_heads = n_heads
+        self.n_layers = n_layers
+        self.ffn_dim = ffn_dim
+        self.tanh_clip = tanh_clip
         self.cost_mode = cost_mode
         self.co2_weight = float(co2_weight)
         self.co2_scale = float(co2_scale)

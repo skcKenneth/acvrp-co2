@@ -183,11 +183,10 @@ def run_experiment(cfg_path: str, solver: str = "ortools") -> None:
         )
     print("\nAsymmetry penalties (vs. AR baseline):")
     for v, p in penalties.items():
-        dist = p["distance_pct"]
-        co2 = p["co2_pct"]
-        dist_str = f"{dist:+.2f}%" if dist is not None else "n/a"
-        co2_str = f"{co2:+.2f}%" if co2 is not None else "n/a"
-        print(f"  {v}: distance {dist_str}, CO2 {co2_str}")
+        print(
+            f"  {v}: distance {p['distance_pct']:+.2f}%, "
+            f"CO2 {p['co2_pct']:+.2f}%"
+        )
     print(f"\nOutputs written to: {results_dir.resolve()}")
 
 

@@ -115,12 +115,9 @@ def make_comparison_bar(
 ) -> None:
     """Bar chart of distance / fuel / CO2 across variants."""
     codes = list(solutions.keys())
-    def _finite_or_nan(value: float) -> float:
-        return value if np.isfinite(value) else np.nan
-
-    distances = [_finite_or_nan(solutions[c].distance_m / 1000.0) for c in codes]
-    fuels = [_finite_or_nan(solutions[c].fuel_l) for c in codes]
-    co2s = [_finite_or_nan(solutions[c].co2_kg) for c in codes]
+    distances = [solutions[c].distance_m / 1000.0 for c in codes]   # to km
+    fuels = [solutions[c].fuel_l for c in codes]
+    co2s = [solutions[c].co2_kg for c in codes]
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 4))
     colours = [VARIANT_COLOURS.get(c, "#888") for c in codes]

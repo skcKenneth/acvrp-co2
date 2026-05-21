@@ -107,14 +107,21 @@ def main() -> None:
 
     # ---- Policy --------------------------------------------------------
     model_cfg = cfg["model"]
+    n_customers = cfg["synthetic"]["num_customers"]
+
     if args.policy == "matnet":
         policy = ACVRPPolicy(**model_cfg)
-        save_prefix = "matnet_cvrp"
+        default_prefix = f"matnet_cvrp_n{n_customers}"
     else:
         # CoordOnlyACVRPPolicy does not accept edge_feature_dim.
         coord_cfg = {k: v for k, v in model_cfg.items() if k != "edge_feature_dim"}
         policy = CoordOnlyACVRPPolicy(**coord_cfg)
-        save_prefix = "baseline_am"
+        default_prefix = f"baseline_am_n{n_customers}"
+
+    # Allow the YAML to override the default checkpoint prefix.
+    # This lets two different configs (e.g. N=20 vs N=50) coexist in
+    # the same models/ directory without overwriting each other.
+    save_prefix = cfg.get("training", {}).get("save_prefix", default_prefix)
 
     # ---- Trainer config ------------------------------------------------
     tcfg_dict = dict(cfg["training"])

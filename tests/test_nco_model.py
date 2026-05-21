@@ -69,6 +69,16 @@ def test_synthetic_instance_depot_demand_zero(params):
     assert inst.demands[inst.depot_index] == 0
 
 
+def test_sanitize_distance_matrix_replaces_inf():
+    from src.nco.dataset import sanitize_distance_matrix
+
+    dist = np.array([[0.0, 100.0], [math.inf, 0.0]], dtype=float)
+    clean = sanitize_distance_matrix(dist)
+    assert np.isfinite(clean).all()
+    assert clean[0, 1] == pytest.approx(100.0)
+    assert clean[1, 0] == pytest.approx(1000.0)
+
+
 def test_synthetic_dataset_seed_reproducibility(params):
     """Same seed must produce identical datasets."""
     cfg = SyntheticConfig(num_customers=5, capacity=15)
@@ -145,6 +155,35 @@ def test_acvrp_policy_forward_pass(params):
         visited = set(rollout.actions[b].tolist())
         for cust in range(1, cfg.num_customers + 1):
             assert cust in visited, f"Customer {cust} missing from rollout {b}"
+
+
+def test_greedy_forward_finite_with_inf_distance_matrix(params):
+    """Instances built from matrices with inf must produce finite rollouts."""
+    from src.nco.dataset import _build_instance_from_distance
+    from src.nco.instance import collate_instances
+    from src.nco.model import ACVRPPolicy
+
+    n = 6
+    coords = np.random.default_rng(0).uniform(0, 5000, size=(n, 2)).astype(np.float32)
+    demands = np.array([0, 3, 4, 2, 5, 1], dtype=np.int64)
+    dist = np.full((n, n), 500.0, dtype=float)
+    np.fill_diagonal(dist, 0.0)
+    dist[0, 3] = math.inf
+
+    inst = _build_instance_from_distance(
+        coords, demands, dist, capacity=20, params=params, city_name="test",
+    )
+    assert np.isfinite(inst.distance).all()
+
+    batch = collate_instances([inst])
+    assert np.isfinite(batch.edge_features.numpy()).all()
+
+    policy = ACVRPPolicy(
+        node_feature_dim=3, edge_feature_dim=4,
+        embed_dim=32, n_heads=4, n_layers=2, ffn_dim=64,
+    )
+    rollout = policy.greedy(batch)
+    assert torch.isfinite(rollout.cost).all()
 
 
 def test_pomo_sample_baseline_diversity(params):
