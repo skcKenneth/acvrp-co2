@@ -60,40 +60,64 @@ topologies.
 ## Repository layout
 
 ```
-src/
-├── data_loader.py             OSM graph download, customer CSV reader
-├── distance_matrix.py         SE / SM / SR / AR distance matrices
-├── emissions_model.py         Linear fuel / CO2 model
-├── solver_ortools.py          Classical CVRP via OR-Tools
-├── solver_ga.py               GA cross-check
-├── evaluator.py               Ground-truth re-evaluation on AR
-├── visualization.py           Folium + matplotlib outputs
-├── experiments.py             Classical experiment runner
-├── nco_experiments.py         Neural training + evaluation entry point
-├── nco/
-│   ├── instance.py            CVRPInstance container + batch collation
-│   ├── dataset.py             Synthetic + OSM instance generators
-│   ├── encoder.py             Bidirectional edge-attention encoder
-│   ├── decoder.py             Capacity-aware pointer decoder
-│   ├── model.py               End-to-end ACVRPPolicy
-│   ├── trainer.py             REINFORCE+POMO training loop
-│   └── inference.py           Greedy / POMO-sampled inference
-└── baselines/
-    └── solver_pyvrp.py        PyVRP (HGS-CVRP) wrapper
-
-configs/
-└── nco_config.yaml            Hyperparameters for the neural pipeline
-
-config.yaml                    Hyperparameters for the classical pipeline (Macau)
-config_hongkong.yaml           Alternative city: Hong Kong Central
-data/customers_macau.csv       Customer locations -- Macau Peninsula
-data/customers_hongkong.csv    Customer locations -- HK Central / Sheung Wan / Wan Chai
-docs/methodology.md            Classical formulation, equations, citations
-docs/nco_methodology.md        Neural formulation, equations, citations
-tests/                         Unit tests (pytest)
-notebooks/                     Jupyter quickstart notebooks
-models/                        Saved policy checkpoints (gitignored)
+acvrp-co2/
+├── config.yaml                    Classical pipeline — Macau Peninsula
+├── config_hongkong.yaml           Classical pipeline — Hong Kong Central
+├── configs/
+│   ├── train.yaml                 Primary NCO training (N=20, MatNet + baseline)
+│   ├── train_n50.yaml             Optional scalability ablation (N=50)
+│   ├── nco_config.yaml            Legacy unified nco_experiments train/eval
+│   └── nco_config_smoke.yaml      Quick smoke test (~5 min)
+├── conftest.py                    Pytest rootdir / `import src` bootstrap
+├── pyproject.toml                 Package metadata + pytest settings
+├── data/
+│   ├── customers_macau.csv        Customer locations — Macau Peninsula
+│   └── customers_hongkong.csv     Customer locations — HK Central / Sheung Wan / Wan Chai
+├── docs/
+│   ├── methodology.md             Classical formulation, equations, citations
+│   ├── nco_methodology.md         Neural formulation, equations, citations
+│   ├── literature_review.md       Literature review notes
+│   └── *.html, *.pdf              Rendered / supplementary reference docs
+├── src/
+│   ├── data_loader.py             OSM graph download, customer CSV reader
+│   ├── distance_matrix.py         SE / SM / SR / AR distance matrices
+│   ├── emissions_model.py         Linear fuel / CO₂ model
+│   ├── solver_ortools.py          Classical CVRP via OR-Tools
+│   ├── solver_ga.py               Genetic-algorithm cross-check
+│   ├── evaluator.py               Ground-truth re-evaluation on AR
+│   ├── visualization.py           Folium + matplotlib outputs
+│   ├── experiments.py             Classical asymmetry-penalty study (Stage 1)
+│   ├── experiments_full.py        4-solver × 4-matrix grid (Stage 4)
+│   ├── train_nco.py               NCO training CLI — MatNet vs Vanilla-AM
+│   ├── train_nco_fast.py          Faster training (AMP, TF32, optional compile)
+│   ├── sweep_pareto.py            Multi-weight CO₂ Pareto training sweep
+│   ├── nco_experiments.py         Legacy unified train + cross-city eval
+│   ├── nco/
+│   │   ├── instance.py            CVRPInstance container + batch collation
+│   │   ├── dataset.py             Synthetic + OSM instance generators
+│   │   ├── encoder.py             Bidirectional edge-attention encoder
+│   │   ├── decoder.py             Capacity-aware pointer decoder
+│   │   ├── model.py               ACVRPPolicy (MatNet-CVRP)
+│   │   ├── baseline_am.py         Vanilla Attention Model (coord-only)
+│   │   ├── trainer.py             REINFORCE + POMO training loop
+│   │   ├── trainer_fast.py        AMP / TF32 / compile optimisations
+│   │   └── inference.py           Greedy / POMO-sampled inference
+│   └── baselines/
+│       └── solver_pyvrp.py        PyVRP (HGS-CVRP) wrapper
+├── tests/                         Unit tests (pytest)
+├── models/                        Policy checkpoints (*.pt) and training logs
+├── results_macau/                 Classical + grid outputs — Macau
+├── results_hongkong/              Classical + grid outputs — Hong Kong
+├── cache/                         Cached OSM graph downloads (gitignored)
+├── logs/                          Overnight pipeline logs
+├── run_overnight.bat              Unattended end-to-end pipeline (Windows)
+└── check_status.bat               Quick checker for overnight run status
 ```
+
+**Outputs.** Stage 1 and Stage 4 write per-city folders (`results_macau/`,
+`results_hongkong/`) as set in each city's `config*.yaml`. NCO training
+writes checkpoints to `models/`; legacy `nco_experiments` eval uses
+`results/nco/` (see `configs/nco_config.yaml`).
 
 ---
 
