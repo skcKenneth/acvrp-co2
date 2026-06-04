@@ -1,0 +1,101 @@
+# =============================================================================
+# ACVRP-CO2 randomized robustness experiment configuration
+# =============================================================================
+#
+# Purpose:
+#   Generate reproducible randomized customer sets for Macau and Hong Kong,
+#   solve each instance with OR-Tools under SE / SM / SR / AR matrices, and
+#   re-evaluate every route under AR as the ground-truth road network.
+#
+# Notes:
+#   - Depot coordinates are copied from row 0 of the existing fixed customer
+#     CSV files.
+#   - Graph cache paths point to the existing cached OSMnx GraphML files.
+#   - Generated outputs should not be overwritten unless the runner is called
+#     with an explicit --overwrite option.
+
+experiment:
+  name: randomized_robustness
+  seed: 42
+  instances_per_city: 30
+  num_customers: 20
+  variants: [SE, SM, SR, AR]
+  solvers: [ortools]
+  reference_variant: AR
+  evaluation_variant: AR
+
+cities:
+  macau:
+    graph_cache: cache/graph_22.1980_113.5430_2000.graphml
+    fixed_customer_csv: data/customers_macau.csv
+    depot_source: "data/customers_macau.csv row 0"
+    depot:
+      name: Depot_TapSeac
+      latitude: 22.19800
+      longitude: 113.54300
+      demand: 0
+    centre_lat: 22.1980
+    centre_lon: 113.5430
+    radius_m: 2000
+    network_type: drive
+    avg_speed_kmh: 22
+
+  hongkong:
+    graph_cache: cache/graph_22.2854_114.1577_2000.graphml
+    fixed_customer_csv: data/customers_hongkong.csv
+    depot_source: "data/customers_hongkong.csv row 0"
+    depot:
+      name: Depot_IFC
+      latitude: 22.28540
+      longitude: 114.15770
+      demand: 0
+    centre_lat: 22.2854
+    centre_lon: 114.1577
+    radius_m: 2000
+    network_type: drive
+    avg_speed_kmh: 20
+
+sampling:
+  candidate_rule: depot_strongly_connected_component
+  sample_without_replacement: true
+  require_depot_to_customer_reachable: true
+  require_customer_to_depot_reachable: true
+
+fleet:
+  num_vehicles: 4
+  vehicle_capacity: 60
+
+demand:
+  low: 4
+  high: 9
+  depot_demand: 0
+  units: synthetic_kg
+
+emissions:
+  empty_mass_kg: 2200
+  co2_per_litre: 2.68
+  beta_distance: 0.000125
+  beta_time: 0.00040
+  beta_payload_distance: 0.0000018
+
+objective:
+  alpha_distance: 0.5
+  alpha_emissions: 0.5
+
+ortools:
+  time_limit_seconds: 90
+  first_solution_strategy: PATH_CHEAPEST_ARC
+  local_search_metaheuristic: GUIDED_LOCAL_SEARCH
+
+output:
+  instances_dir: data/randomized
+  matrices_dir: data/matrices/randomized
+  routes_dir: results/randomized/routes
+  results_dir: results/randomized
+  figures_dir: figures
+  raw_results_csv: results/randomized/raw_results.csv
+  summary_results_csv: results/randomized/penalty_summary.csv
+  statistical_tests_csv: results/randomized/statistical_tests.csv
+  instance_metadata_csv: data/randomized/instance_metadata.csv
+  save_matrices: true
+  save_routes: true
