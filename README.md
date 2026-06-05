@@ -1,267 +1,295 @@
-# ACVRP-CO₂
+# ACVRP-CO2
 
-**Carbon-Aware Asymmetric Capacitated Vehicle Routing on Real Road
-Networks: A Comparative Study of Neural Combinatorial Optimization
-and Classical Solvers**
+Carbon-aware asymmetric capacitated vehicle routing on real OpenStreetMap
+road networks.
 
-This repository accompanies a high-school research project that
-quantifies the cost of ignoring road-network asymmetry in last-mile
-delivery, and develops an asymmetric-aware neural combinatorial
-optimisation (NCO) policy that the project compares against
-state-of-the-art classical solvers (OR-Tools, PyVRP/HGS).
+This repository studies how much routing distance, fuel use, and CO2
+emissions can change when CVRP routes are planned with symmetric distance
+approximations instead of a directed asymmetric road-network matrix. The
+current case studies use Macau and Hong Kong road networks from
+OpenStreetMap.
 
----
+The project compares four distance-matrix variants:
 
-## Research Questions
+- **SE**: symmetric Euclidean distance.
+- **SM**: symmetric Manhattan distance.
+- **SR**: symmetrized road-network distance.
+- **AR**: asymmetric directed road-network distance.
 
-* **RQ1.** When solving the CVRP on real road networks, how much
-  extra distance and CO₂ does a *symmetric-distance* baseline incur
-  compared to a solver that respects the true *asymmetric* topology?
-* **RQ2.** Can a neural policy trained on *synthetic* asymmetric
-  instances generalise to *unseen real cities*? How does it compare
-  to OR-Tools and to PyVRP's hybrid genetic search?
-* **RQ3.** How does the gap scale with instance asymmetry (i.e.,
-  the degree of one-way-street prevalence)?
+For both the fixed and randomized experiments, route plans are
+re-evaluated under **AR** as the ground-truth directed road network. The
+reported penalties compare each SE, SM, or SR-planned route against the
+AR-planned route for the same instance.
 
----
+## Repository Structure
 
-## Approach at a glance
+```text
+config.yaml                         Macau fixed-case configuration
+config_hongkong.yaml                Hong Kong fixed-case configuration
+configs/randomized.yaml             Randomized robustness configuration
+configs/train*.yaml                 Neural solver training configurations
 
-**Classical pipeline (Stage 1).**
-Four distance-matrix variants (Euclidean, Manhattan, symmetrised road,
-asymmetric road) solved with OR-Tools and PyVRP, then all plans
-re-evaluated under the asymmetric ground-truth matrix to measure the
-*asymmetry penalty*.
+cache/                              Cached OSMnx GraphML road networks
+data/customers_*.csv                Fixed 21-node customer sets
+data/randomized/                    Generated randomized customer instances
+data/matrices/randomized/           Saved randomized distance matrices
 
-**Neural pipeline (Stage 2).**
-A custom asymmetric-aware policy network with:
+src/data_loader.py                  OSM graph loading and customer helpers
+src/distance_matrix.py              SE, SM, SR, AR matrix construction
+src/solver_ortools.py               OR-Tools CVRP solver
+src/solver_ga.py                    Genetic algorithm baseline
+src/emissions_model.py              Linear fuel and CO2 model
+src/evaluator.py                    AR re-evaluation and penalties
+src/experiments.py                  Fixed-case classical runner
+src/experiments_full.py             Fixed-case solver-by-matrix runner
+src/random_instances.py             Randomized instance generator
+src/run_randomized.py               Randomized OR-Tools runner
+src/aggregate_results.py            Randomized result aggregation
+src/make_figures.py                 Publication figure generation
+src/nco/                            Neural solver modules
 
-* a **bidirectional edge-attention encoder** that processes the
-  road-network arcs in both directions (extends MatNet's dual-graph
-  idea from ATSP to ACVRP),
-* a **capacity-aware autoregressive decoder** that masks infeasible
-  customers and resets capacity on depot returns,
-* training via **REINFORCE with the POMO multi-start baseline**
-  (no rotation/reflection augmentation, which would corrupt the
-  asymmetric matrix),
-* edge features include per-arc distance, time, fuel, and CO₂, so
-  the model directly attends to the emissions objective.
-
-**Cross-city generalisation study (Stage 3).**
-The policy is trained on *synthetic* asymmetric instances and
-evaluated on held-out OSM-derived instances from two dense, highly
-asymmetric urban centres — **Macau Peninsula** and **Hong Kong
-Island Central / Sheung Wan / Wan Chai**. The per-city optimality
-gap quantifies how well the model generalises across unseen road
-topologies.
-
----
-
-## Repository layout
-
-```
-acvrp-co2/
-├── config.yaml                    Classical pipeline — Macau Peninsula
-├── config_hongkong.yaml           Classical pipeline — Hong Kong Central
-├── configs/
-│   ├── train.yaml                 Primary NCO training (N=20, MatNet + baseline)
-│   ├── train_n50.yaml             Optional scalability ablation (N=50)
-│   ├── nco_config.yaml            Legacy unified nco_experiments train/eval
-│   └── nco_config_smoke.yaml      Quick smoke test (~5 min)
-├── conftest.py                    Pytest rootdir / `import src` bootstrap
-├── pyproject.toml                 Package metadata + pytest settings
-├── data/
-│   ├── customers_macau.csv        Customer locations — Macau Peninsula
-│   └── customers_hongkong.csv     Customer locations — HK Central / Sheung Wan / Wan Chai
-├── docs/
-│   ├── methodology.md             Classical formulation, equations, citations
-│   ├── nco_methodology.md         Neural formulation, equations, citations
-│   ├── literature_review.md       Literature review notes
-│   └── *.html, *.pdf              Rendered / supplementary reference docs
-├── src/
-│   ├── data_loader.py             OSM graph download, customer CSV reader
-│   ├── distance_matrix.py         SE / SM / SR / AR distance matrices
-│   ├── emissions_model.py         Linear fuel / CO₂ model
-│   ├── solver_ortools.py          Classical CVRP via OR-Tools
-│   ├── solver_ga.py               Genetic-algorithm cross-check
-│   ├── evaluator.py               Ground-truth re-evaluation on AR
-│   ├── visualization.py           Folium + matplotlib outputs
-│   ├── experiments.py             Classical asymmetry-penalty study (Stage 1)
-│   ├── experiments_full.py        4-solver × 4-matrix grid (Stage 4)
-│   ├── train_nco.py               NCO training CLI — MatNet vs Vanilla-AM
-│   ├── train_nco_fast.py          Faster training (AMP, TF32, optional compile)
-│   ├── sweep_pareto.py            Multi-weight CO₂ Pareto training sweep
-│   ├── nco_experiments.py         Legacy unified train + cross-city eval
-│   ├── nco/
-│   │   ├── instance.py            CVRPInstance container + batch collation
-│   │   ├── dataset.py             Synthetic + OSM instance generators
-│   │   ├── encoder.py             Bidirectional edge-attention encoder
-│   │   ├── decoder.py             Capacity-aware pointer decoder
-│   │   ├── model.py               ACVRPPolicy (MatNet-CVRP)
-│   │   ├── baseline_am.py         Vanilla Attention Model (coord-only)
-│   │   ├── trainer.py             REINFORCE + POMO training loop
-│   │   ├── trainer_fast.py        AMP / TF32 / compile optimisations
-│   │   └── inference.py           Greedy / POMO-sampled inference
-│   └── baselines/
-│       └── solver_pyvrp.py        PyVRP (HGS-CVRP) wrapper
-├── tests/                         Unit tests (pytest)
-├── models/                        Policy checkpoints (*.pt) and training logs
-├── results_macau/                 Classical + grid outputs — Macau
-├── results_hongkong/              Classical + grid outputs — Hong Kong
-├── cache/                         Cached OSM graph downloads (gitignored)
-├── logs/                          Overnight pipeline logs
-├── run_overnight.bat              Unattended end-to-end pipeline (Windows)
-└── check_status.bat               Quick checker for overnight run status
+results_macau/                      Fixed Macau outputs
+results_hongkong/                   Fixed Hong Kong outputs
+results/randomized/                 Randomized raw results and summaries
+figures/                            Generated PDF and PNG figures
+tests/                              Pytest test suite
 ```
 
-**Outputs.** Stage 1 and Stage 4 write per-city folders (`results_macau/`,
-`results_hongkong/`) as set in each city's `config*.yaml`. NCO training
-writes checkpoints to `models/`; legacy `nco_experiments` eval uses
-`results/nco/` (see `configs/nco_config.yaml`).
+## Environment Setup
 
----
+Recommended Python version: **Python 3.10 or later**.
 
-## Installation
-
-Requires **Python 3.10+** and (for the neural pipeline) a CUDA-capable
-NVIDIA GPU. CPU-only training is possible but slow.
+Install the project dependencies from the repository root:
 
 ```bash
-git clone https://github.com/skckenneth/acvrp-co2.git
-cd acvrp-co2
-python -m venv .venv
-source .venv/bin/activate                # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-If your CUDA version differs from PyTorch's default, install the
-matching wheel from <https://pytorch.org/get-started/locally/> before
-`pip install -r requirements.txt`.
+The randomized OR-Tools experiment uses the standard scientific and
+geospatial stack in `requirements.txt`, including `numpy`, `pandas`,
+`networkx`, `osmnx`, `ortools`, `scipy`, and `matplotlib`.
 
----
+Neural training is optional for the randomized robustness experiment.
+The neural modules require PyTorch, and GPU training requires a
+CUDA-capable NVIDIA GPU with a compatible PyTorch installation.
 
-## Reproducing the experiments
+To check the basic test suite:
 
-### Stage 1 — Classical asymmetry penalty study
+```bash
+pytest -q
+```
+
+## Reproduce Fixed Case Studies
+
+Run the fixed Macau OR-Tools case study:
 
 ```bash
 python -m src.experiments --config config.yaml
 ```
 
-Writes `results/summary.csv`, `results/comparison.png`,
-`results/routes_map.html`.
-
-### Stage 2 — Train the neural policies
-
-The default setup trains at **N=20** customers. This matches the
-standard problem size used in the AM (Kool 2019) and POMO (Kwon 2020)
-papers, converges quickly, and is what produces the *main* results
-reported in the paper.
+Run the fixed Hong Kong OR-Tools case study:
 
 ```bash
-# Smoke test (~5 min, verifies the pipeline)
-python -m src.nco_experiments --mode train --config configs/nco_config_smoke.yaml
-
-# MAIN: MatNet-CVRP at N=20 (~60-90 min on RTX 5070)
-python -m src.train_nco --policy matnet --config configs/train.yaml --osm-eval
-
-# MAIN: Vanilla-AM baseline at N=20 (~60-80 min)
-python -m src.train_nco --policy baseline --config configs/train.yaml --osm-eval
+python -m src.experiments --config config_hongkong.yaml
 ```
 
-Main checkpoints land in:
-- `models/matnet_cvrp_n20_best.pt`
-- `models/baseline_am_n20_best.pt`
+These write fixed-case summaries, penalty JSON files, maps, and
+comparison figures under:
 
-#### Optional scalability ablation (N=50)
-
-For Section 5.2 of the paper (scalability evidence), the same two
-architectures can be trained on the larger N=50 problem. This is
-**not** required to reproduce the headline result, only to corroborate
-that the approach scales.
-
-```bash
-# OPTIONAL: MatNet-CVRP at N=50 (~3-5 hours)
-python -m src.train_nco --policy matnet --config configs/train_n50.yaml --osm-eval
-
-# OPTIONAL: Vanilla-AM at N=50 (~3-4 hours)
-python -m src.train_nco --policy baseline --config configs/train_n50.yaml --osm-eval
+```text
+results_macau/
+results_hongkong/
 ```
 
-These write to separate filenames:
-- `models/matnet_cvrp_n50_best.pt`
-- `models/baseline_am_n50_best.pt`
-
-so the N=20 and N=50 runs never overwrite each other.
-
-### Stage 3 — Cross-city evaluation (NCO only)
+Run the full fixed-case solver-by-matrix comparison, if the neural
+checkpoints are available:
 
 ```bash
-python -m src.nco_experiments \
-    --mode eval \
-    --config configs/nco_config.yaml \
-    --checkpoint models/matnet_cvrp_best.pt
-```
-
-Writes `results/nco/nco_eval.json` containing per-instance distances
-under each solver, and prints an aggregate gap table.
-
-### Stage 4 — Full 4-solver × 4-matrix grid (the paper's headline experiment)
-
-This produces the comparison table that anchors the manuscript:
-OR-Tools, GA, Vanilla-AM, and MatNet-CVRP each run on the SE / SM / SR
-/ AR distance matrices for the same customer set, all re-evaluated on
-the AR ground truth.
-
-```bash
-# Macau (primary city)
 python -m src.experiments_full --config config.yaml ^
-    --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
-    --baseline-checkpoint models\baseline_am_n20_best.pt
+  --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
+  --baseline-checkpoint models\baseline_am_n20_best.pt
 
-# Hong Kong (secondary city)
 python -m src.experiments_full --config config_hongkong.yaml ^
-    --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
-    --baseline-checkpoint models\baseline_am_n20_best.pt
+  --matnet-checkpoint models\matnet_cvrp_n20_best.pt ^
+  --baseline-checkpoint models\baseline_am_n20_best.pt
 ```
 
-Writes `results_<city>/summary_full.csv` and
-`results_<city>/penalties_full.json`.
+On macOS/Linux shells, replace the Windows line-continuation character
+`^` with `\`.
 
----
+Expected full-comparison outputs include:
 
-## Estimated compute budgets
+```text
+results_macau/summary_full.csv
+results_macau/penalties_full.json
+results_hongkong/summary_full.csv
+results_hongkong/penalties_full.json
+```
 
-Wall-clock times below are measured on an RTX 5070 (12 GB). Mid-range
-GPUs (RTX 4070, 3080) will be within ~30% of these numbers.
+## Reproduce Randomized Robustness Experiment
 
-| Pipeline | Hardware | Wall-clock |
-|---|---|---|
-| Classical (Stage 1, per city) | CPU, 8 cores | ~5 min |
-| NCO smoke test | RTX 5070 | ~5 min |
-| MatNet-CVRP training (N=20) | RTX 5070 | ~60-90 min |
-| Vanilla-AM training (N=20) | RTX 5070 | ~60-80 min |
-| Grid comparison (per city) | RTX 5070 + CPU | ~10 min |
-| **Full pipeline (both cities)** | **RTX 5070** | **~3-4 hours** |
+The randomized experiment samples 30 instances per city by default.
+Each instance has one fixed depot and 20 sampled customer nodes. Customer
+nodes are sampled from graph nodes that are reachable from the depot and
+can also reach the depot in the directed graph.
 
----
+Generate randomized instances:
 
-## Recommended order for a high-school researcher
+```bash
+python -m src.random_instances --config configs/randomized.yaml --overwrite
+```
 
-1. Read `docs/methodology.md`, then `docs/nco_methodology.md`.
-2. Run `pytest tests/` to verify the environment.
-3. Run the classical Stage 1 — gets a real number for the asymmetry
-   penalty without needing a GPU.
-4. Run the NCO smoke test to confirm GPU training works.
-5. Launch the full MatNet-CVRP training, then go to bed.
-6. Train the Vanilla-AM baseline (Stage 2, --policy baseline).
-7. Run cross-city evaluation (Stage 3).
-8. Run the full grid comparison (Stage 4) — this is the experiment
-   whose table goes in the paper.
-9. Generate figures and write the manuscript.
+Run the randomized OR-Tools robustness experiment:
 
----
+```bash
+python -m src.run_randomized --config configs/randomized.yaml --overwrite
+```
+
+Aggregate randomized results:
+
+```bash
+python -m src.aggregate_results --input results/randomized/raw_results.csv
+```
+
+Generate publication figures:
+
+```bash
+python -m src.make_figures
+```
+
+For quick checks without overwriting generated data:
+
+```bash
+python -m src.random_instances --config configs/randomized.yaml --dry-run
+python -m src.run_randomized --config configs/randomized.yaml --dry-run
+python -m src.run_randomized --config configs/randomized.yaml --city macau --max-instances 1 --overwrite
+```
+
+## Expected Outputs
+
+Randomized instance files:
+
+```text
+data/randomized/instances_macau.csv
+data/randomized/instances_hongkong.csv
+data/randomized/instance_metadata.csv
+```
+
+Randomized experiment outputs:
+
+```text
+results/randomized/raw_results.csv
+results/randomized/routes/
+data/matrices/randomized/
+```
+
+Aggregated randomized outputs:
+
+```text
+results/randomized/penalty_summary.csv
+results/randomized/city_overview.csv
+results/randomized/statistical_tests.csv
+results/randomized/randomized_results_table.tex
+```
+
+Publication figures:
+
+```text
+figures/fig1_pipeline.pdf
+figures/fig1_pipeline.png
+figures/fig2_fixed_penalty.pdf
+figures/fig2_fixed_penalty.png
+figures/fig3_randomized_boxplot.pdf
+figures/fig3_randomized_boxplot.png
+figures/fig4_solver_heatmap.pdf
+figures/fig4_solver_heatmap.png
+```
+
+## Output Schemas
+
+Randomized node-level CSV:
+
+```text
+city,instance_id,node_id,role,osmid,lat,lon,x,y,demand,sampling_seed
+```
+
+Randomized metadata CSV:
+
+```text
+city,instance_id,num_customers,total_demand,vehicle_capacity,num_vehicles,sampling_seed,status
+```
+
+Raw randomized results CSV:
+
+```text
+city,instance_id,solver,variant,reference_variant,num_customers,total_demand,distance_m,fuel_l,co2_kg,distance_penalty_pct,fuel_penalty_pct,co2_penalty_pct,feasible,infeasible_reason,runtime_seconds,seed
+```
+
+Penalty summary CSV:
+
+```text
+city,variant,n,mean_distance_penalty,sd_distance_penalty,median_distance_penalty,iqr_distance_penalty,mean_fuel_penalty,sd_fuel_penalty,median_fuel_penalty,iqr_fuel_penalty,mean_co2_penalty,sd_co2_penalty,median_co2_penalty,iqr_co2_penalty,min_co2_penalty,max_co2_penalty
+```
+
+City overview CSV:
+
+```text
+city,n_instances,mean_ar_distance_m,mean_ar_fuel_l,mean_ar_co2_kg,mean_best_non_ar_co2_penalty,mean_worst_non_ar_co2_penalty
+```
+
+## Randomized Results Summary
+
+In these randomized instances, planning with symmetric approximations
+produced higher AR-evaluated CO2 than planning directly with AR.
+
+Approximate mean CO2 penalties by city and planning matrix:
+
+| City | SE | SM | SR |
+|---|---:|---:|---:|
+| Macau | 12.71% | 13.03% | 7.58% |
+| Hong Kong | 25.27% | 25.27% | 12.59% |
+
+These values summarize the current `results/randomized/penalty_summary.csv`
+file and should be regenerated if the randomized experiment is rerun.
+
+## Data Notes
+
+- Road networks are loaded from cached OSMnx GraphML files under `cache/`.
+  The current randomized config uses:
+  - `cache/graph_22.1980_113.5430_2000.graphml`
+  - `cache/graph_22.2854_114.1577_2000.graphml`
+- OpenStreetMap data should be attributed to OpenStreetMap contributors
+  in maps, figures, and manuscripts where applicable.
+- Randomized customer demand is synthetic. The default randomized config
+  samples customer demands from the configured integer range and uses
+  depot demand zero.
+- Randomized instance generation is deterministic. The base seed is
+  defined in `configs/randomized.yaml`.
+- Macau instance seeds start at the base seed. Hong Kong instance seeds
+  are offset by `100000` in the generated data, so the first Hong Kong
+  sampling seed is `100042` when the base seed is `42`.
+- Route plans are saved as JSON under `results/randomized/routes/`.
+- Randomized matrices are saved under `data/matrices/randomized/` when
+  `output.save_matrices` is enabled in `configs/randomized.yaml`.
+
+## Known Limitations
+
+- The empirical case studies cover two cities only: Macau and Hong Kong.
+- Randomized customer demand is synthetic rather than observed delivery
+  demand.
+- The emissions model is a simplified linear fuel and CO2 model.
+- The randomized robustness experiment currently uses OR-Tools as the
+  primary solver.
+- Neural solver comparisons are secondary fixed-case analyses and should
+  be interpreted cautiously.
+- The results indicate behavior under this experimental setup; they do
+  not establish universal routing behavior across all cities or fleets.
+
+## Citation
+
+If you use this repository, please cite the associated manuscript.
 
 ## License
 
-MIT.
+This repository is licensed under the MIT License. See `LICENSE` for
+details.

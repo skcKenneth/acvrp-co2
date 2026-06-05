@@ -172,11 +172,14 @@ def snap_customers_to_nodes(
     Customers snapped outside that component are re-snapped to the
     nearest node that *is* reachable from (and can reach) the depot.
     """
-    import osmnx as ox  # lazy import
-
     lons = [c.lon for c in customers]
     lats = [c.lat for c in customers]
-    node_ids = list(ox.nearest_nodes(graph, X=lons, Y=lats))
+    try:
+        import osmnx as ox  # lazy import
+
+        node_ids = list(ox.nearest_nodes(graph, X=lons, Y=lats))
+    except (AttributeError, ImportError):
+        node_ids = _nearest_nodes_in_subset(graph, lons, lats, list(graph.nodes))
 
     depot_node = node_ids[depot_index]
     reachable = _depot_strongly_connected_component(graph, depot_node)
