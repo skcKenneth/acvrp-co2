@@ -1,0 +1,44 @@
+{
+  "city": "macau",
+  "instance_id": 10,
+  "solver": "OR-Tools",
+  "variant": "SM",
+  "routes": [
+    [
+      0,
+      16,
+      15,
+      2,
+      10,
+      4,
+      3,
+      8,
+      9,
+      13,
+      17,
+      6,
+      0
+    ],
+    [
+      0,
+      5,
+      1,
+      14,
+      20,
+      19,
+      7,
+      11,
+      18,
+      12,
+      0
+    ]
+  ],
+  "route_loads": [
+    58,
+    57
+  ],
+  "objective_value": 46202874,
+  "runtime_seconds": 45.001204999978654,
+  "feasible": true,
+  "infeasible_reason": ""
+}

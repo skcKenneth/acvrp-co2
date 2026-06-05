@@ -1,0 +1,49 @@
+{
+  "city": "hongkong",
+  "instance_id": 24,
+  "solver": "OR-Tools",
+  "variant": "SE",
+  "routes": [
+    [
+      0,
+      12,
+      9,
+      13,
+      15,
+      6,
+      20,
+      5,
+      7,
+      11,
+      1,
+      0
+    ],
+    [
+      0,
+      18,
+      0
+    ],
+    [
+      0,
+      17,
+      4,
+      16,
+      19,
+      8,
+      10,
+      3,
+      2,
+      14,
+      0
+    ]
+  ],
+  "route_loads": [
+    60,
+    6,
+    59
+  ],
+  "objective_value": 32073230,
+  "runtime_seconds": 45.00097900000401,
+  "feasible": true,
+  "infeasible_reason": ""
+}

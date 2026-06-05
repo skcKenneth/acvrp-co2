@@ -16,6 +16,5 @@ venv/
 .vscode/
 
 # Project-specific
-results/
 cache/
 *.graphml         # cached OSM graph downloads can be large
