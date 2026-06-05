@@ -1,6 +1,7 @@
 # Python
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
 *.egg-info/
 .venv/
 venv/
@@ -15,6 +16,14 @@ venv/
 .idea/
 .vscode/
 
+# Local logs and scratch space
+*.log
+logs/
+agent_logs/
+scratch/
+tmp/
+temp/
+
 # AI assistant instructions (Claude / Codex / Cursor)
 AGENTS.md
 CLAUDE.md
@@ -28,6 +37,7 @@ scripts/update_claude_pin.*
 .claude/
 .cursorrules
 
-# Project-specific
-cache/
-*.graphml         # cached OSM graph downloads can be large
+# Model checkpoints
+# Only ignore model checkpoints if they are not needed for reproducing
+# neural fixed-case results.
+# models/*.pt
