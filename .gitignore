@@ -15,6 +15,19 @@ venv/
 .idea/
 .vscode/
 
+# AI assistant instructions (Claude / Codex / Cursor)
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+CODEX_TASKS.md
+CODEX*.md
+docs/CLAUDE_PIN.md
+scripts/update_claude_pin.*
+.cursor/
+.codex/
+.claude/
+.cursorrules
+
 # Project-specific
 cache/
 *.graphml         # cached OSM graph downloads can be large
